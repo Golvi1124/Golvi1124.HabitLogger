@@ -6,21 +6,18 @@ CreateDatabase();
 
 void CreateDatabase()
 {
-    using (var connection = new SqliteConnection(connectionString))
+    using (SqliteConnection connection = new(connectionString)) //changed to C# 9+ shorthand syntax (before:  using (var connection = new SqliteConnection(connectionString)))
     {
-        connection.Open();
-
-        using (var command = connection.CreateCommand())
+        using (SqliteCommand tableCmd = connection.CreateCommand())
         {
-            command.CommandText = @"
-                CREATE TABLE IF NOT EXISTS walkingHabit (
+            connection.Open(); //now comes after the command is created instead of before
+            tableCmd.CommandText = // 'tableCmd' is more descriptive than 'command'. no fifference in functionality
+                @"CREATE TABLE IF NOT EXISTS walkingHabit (
                     Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    Date TXT,
-                    Meters INTEGER );";
-                   
-
-            command.ExecuteNonQuery();
-                
+                    Date TEXT, 
+                    Quantity INTEGER
+                    )"; //TEXT (correct SQLite type) instead of TXT (which isn't standard)
+            tableCmd.ExecuteNonQuery();
         }
     }
 }
