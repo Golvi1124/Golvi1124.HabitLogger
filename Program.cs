@@ -1,4 +1,23 @@
-﻿// installing Spectre Console NuGet Package to easier to create beautiful, cross platform, console applications
+﻿/* Rest of To Do:
+ *  handle all possible errors so that the application never crashes.
+ *  Follow the DRY Principle, and avoid code repetition - maybe can improve somethign in the end?
+ *  Your project needs to contain a Read Me file where you'll explain how your app works. Here's a nice example: https://github.com/thags/ConsoleTimeLogger
+ *  You can keep all of the code in one single class if you wish. - seperate methods in different files
+ *  
+ *  Extra challanges:
+ *  If you haven't, try using parameterized queries to make your application more secure.
+ *  https://reintech.io/blog/mastering-parameterized-queries-ado-net
+ *  Let the users create their own habits to track. That will require that you let them choose the unit of measurement of each habit.
+ *  Seed Data into the database automatically when the database gets created for the first time, generating a few habits and inserting a 
+ hundred records with randomly generated values. This is specially helpful during development so you don't have to reinsert data every 
+time you create the database.
+ *  Create a report functionality where the users can view specific information (i.e. how many times the user ran in a year? how many kms?) SQL allows you to ask very interesting things from your database.
+ *  
+ 
+ */
+
+
+// installing Spectre Console NuGet Package to easier to create beautiful, cross platform, console applications
 using System.Globalization;
 using Microsoft.Data.Sqlite;
 using Spectre.Console;
@@ -42,7 +61,7 @@ void MainMenu()
                 GetRecords();
                 break;
             case "Update Record":
-                //   UpdateRecord();
+                UpdateRecord();
                 break;
             case "Quit":
                 Console.WriteLine("Goddbye!");
@@ -51,6 +70,51 @@ void MainMenu()
             default: //since using Spectre consule, don't need necceserily to use default case, since user can't select anything else than the options
                 Console.WriteLine("Invalid choice. Please try again.");
                 break;
+        }
+    }
+}
+
+void UpdateRecord()
+{
+    GetRecords(); 
+
+    int id = GetNumber("\nPlease enter the ID of the record you want to update.");
+
+    bool updateDate = AnsiConsole.Confirm("Do you want to update the date?");
+    string date = "";
+    if (updateDate)
+    {
+        date = GetDate("\nEnter the new date (format - dd-mm-yy) or insert 0 to Go Back to Main Menu:\n");
+    }
+
+    bool updateQuantity = AnsiConsole.Confirm("Do you want to update the distance?");
+    int quantity = 0;
+    if (updateQuantity)
+    {
+        quantity = GetNumber("\nPlease enter the new number of meters walked (no decimals or negatives allowed) or enter 0 to go back to Main Menu.");
+    }
+
+    string query; // querry for each combination of updates
+    if (updateDate && updateQuantity)
+    {
+        query = $"UPDATE walkingHabit SET date = '{date}', Meters = {quantity} WHERE Id = {id}";
+    }
+    else if (updateDate && !updateQuantity)
+    {
+        query = $"UPDATE walkingHabit SET date = '{date}' WHERE Id = {id}";
+    }
+    else
+    {
+        query = $"UPDATE walkingHabit SET Meters = {quantity} WHERE Id = {id}";
+    }
+
+    using (var connection = new SqliteConnection(connectionString))
+    {
+        connection.Open();
+        using (var command = connection.CreateCommand())
+        {
+            command.CommandText = query;
+            command.ExecuteNonQuery();
         }
     }
 }
