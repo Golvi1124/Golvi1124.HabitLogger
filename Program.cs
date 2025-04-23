@@ -21,6 +21,9 @@ void MainMenu()
             new SelectionPrompt<string>()
                 .Title("What do you want to do?")
                 .AddChoices(
+                    "Add Habit",
+                    "Delete Habit",
+                    "Update Habit",
                     "Add Record",
                     "Delete Record",
                     "View Records",
@@ -31,6 +34,16 @@ void MainMenu()
 
         switch (usersChoice)
         {
+            case "Add Habit":
+                AddHabit();
+                break;
+            case "Delete Habit":
+                DeleteHabit();
+                break;
+            case "Update Habit":
+                UpdateHabit();
+                break;
+            // no viewing seperately Habits??
             case "Add Record":
                 AddRecord();
                 break;
@@ -59,27 +72,190 @@ void CreateDatabase()
         using (SqliteCommand tableCmd = connection.CreateCommand())
         {
             connection.Open();
+
             tableCmd.CommandText =
-                @"CREATE TABLE IF NOT EXISTS walkingHabit (
+                @"CREATE TABLE IF NOT EXISTS records (
                     Id INTEGER PRIMARY KEY AUTOINCREMENT,
                     Date TEXT, 
-                    Quantity INTEGER
-                    );"; //TEXT (correct SQLite type) instead of TXT (which isn't standard)
-            tableCmd.ExecuteNonQuery(); //call the ExecuteNonQuery method when we don't want any data to be returned
+                    Quantity INTEGER,
+                    HabitId INTEGER,
+                    FOREIGN KEY (HabitId) REFERENCES habits(Id) ON DELETE CASCADE
+                    )";
+            /*
+                * HabitId property associate all rows with a row in the Habits table. The association happens due to the FOREIGN KEY constraint.
+            Script's structure : FOREIGN KEY(<column that will be linked to the external table>) REFERENCES habits(<column we will link to, in the external table>)
+                * ON DELETE CASCADE means if we delete a record in the habits table, all records that have it as a foreign key will be deleted in the records table. 
+            It's a very important script for data integrity.
+             */
+            tableCmd.ExecuteNonQuery(); // call the ExecuteNonQuery method when we don't want any data to be returned
+
+            tableCmd.CommandText =
+                @"CREATE TABLE IF NOT EXISTS habits (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    Name TEXT, 
+                    MeasurementUnit TEXT
+                    )";
+            tableCmd.ExecuteNonQuery();
         }
     }
 }
 
-void AddRecord()
-{
-    string date = GetDate("\nEnter the date (format - dd-mm-yy) or insert 0 to Go Back to Main Menu:\n");
-    int quantity = GetNumber("\nPlease enter number of meters walked (no decimals or negatives allowed) or enter 0 to go back to Main Menu.");
+// Habit handling methods
 
+void AddHabit()
+{
+    var name = AnsiConsole.Ask<string>("What's the habit's name?");
+    while (string.IsNullOrWhiteSpace(name)) //added check for whitespace 
+    {
+        name = AnsiConsole.Ask<string>("Habit's name can't be empty. Try again:");
+    }
+
+    var unit = AnsiConsole.Ask<string>("What's the habit's unit of measurement?");
+    while (string.IsNullOrEmpty(unit))
+    {
+        unit = AnsiConsole.Ask<string>("Unit of measurement can't be empty. Try again:");
+    }
     using (SqliteConnection connection = new(connectionString))
     using (SqliteCommand insertCmd = connection.CreateCommand())
     {
         connection.Open();
-        insertCmd.CommandText = $"INSERT INTO walkingHabit (date, meters) VALUES ('{date}', {quantity})";
+        insertCmd.CommandText = $"INSERT INTO habits (Name, MeasurementUnit) VALUES ('{name}', '{unit}')";
+        insertCmd.ExecuteNonQuery();
+    }
+}
+
+void DeleteHabit()
+{
+    GetHabits();
+
+    var id = GetNumber("Please type the id of the habit you want to delete.");
+    using (SqliteConnection connection = new(connectionString))
+    using (SqliteCommand deleteCmd = connection.CreateCommand())
+    {
+        connection.Open();
+        deleteCmd.CommandText = $"DELETE FROM habits WHERE Id = {id}";
+        int rowsAffected = deleteCmd.ExecuteNonQuery();
+        if (rowsAffected != 0)
+        {
+            Console.WriteLine("Habit deleted successfully.");
+        }
+        else
+        {
+            Console.WriteLine("Habit not found.");
+        }
+        deleteCmd.ExecuteNonQuery();
+    }
+}
+
+void UpdateHabit()
+{
+    GetHabits();
+    var id = GetNumber("Please type the id of the habit you want to update.");
+
+    string name = "";
+    bool updateName = AnsiConsole.Confirm("Do you want to update the name?");
+    if (updateName)
+    {
+        name = AnsiConsole.Ask<string>("Habit's new name:");
+        while (string.IsNullOrWhiteSpace(name))
+        {
+            name = AnsiConsole.Ask<string>("Habit's name can't be empty. Try again:");
+        }
+    }
+
+    string unit = "";
+    bool updateUnit = AnsiConsole.Confirm("Update Unit of Measurement?");
+    if (updateUnit)
+    {
+        unit = AnsiConsole.Ask<string>("Habit's Unit of Measurement:");
+        while (string.IsNullOrEmpty(unit))
+        {
+            unit = AnsiConsole.Ask<string>("Habit's unit can't be empty. Try again:");
+        }
+    }
+
+    string query;
+    if (updateName && updateUnit)
+    {
+        query = $"UPDATE habits SET Name = '{name}', MeasurementUnit = '{unit}' WHERE Id = {id}";
+    }
+    else if (updateName && !updateUnit)
+    {
+        query = $"UPDATE habits SET Name = '{name}' WHERE Id = {id}";
+    }
+    else
+    {
+        query = $"UPDATE habits SET Unit = '{unit}' WHERE Id = {id}";
+    }
+
+    using (SqliteConnection connection = new(connectionString))
+    using (SqliteCommand updateCmd = connection.CreateCommand())
+    {
+        connection.Open();
+        updateCmd.CommandText = query;
+        updateCmd.ExecuteNonQuery();
+    }
+}
+
+void GetHabits()
+{
+    List<Habit> habits = new();
+
+    using (SqliteConnection connection = new(connectionString))
+    using (SqliteCommand getCmd = connection.CreateCommand())
+    {
+        connection.Open();
+        getCmd.CommandText = "SELECT * FROM habits";
+
+        using (SqliteDataReader reader = getCmd.ExecuteReader())
+        {
+            if (reader.HasRows)
+            {
+                while (reader.Read())
+                {
+                    try
+                    {
+                        habits.Add(
+                            new Habit(
+                            reader.GetInt32(0), // Id
+                            reader.GetString(1), // Name
+                            reader.GetString(2) // MeasurementUnit
+                            )
+                         );
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error reading record: {ex.Message}. Skipping this record.");
+                    }
+                }
+            }
+            else
+            {
+                Console.WriteLine("No records found.");
+            }
+        }
+    }
+    ViewHabits(habits);
+}
+
+
+
+    // Record handling methods
+    void AddRecord()
+{
+    string date = GetDate("\nEnter the date (format - dd-mm-yy) or insert 0 to Go Back to Main Menu:\n");
+
+    GetHabits();
+    int habitId = GetNumber("\nPlease enter the ID of the habit you want to add a record for.");
+
+    int quantity = GetNumber("\nPlease enter number of meters walked (no decimals or negatives allowed) or enter 0 to go back to Main Menu.");
+
+    Console.Clear();
+    using (SqliteConnection connection = new(connectionString))
+    using (SqliteCommand insertCmd = connection.CreateCommand())
+    {
+        connection.Open();
+        insertCmd.CommandText = $"INSERT INTO records(date, quantity, habitId) VALUES('{date}', {quantity}, {habitId})";
         insertCmd.ExecuteNonQuery();
     }
 }
@@ -211,6 +387,8 @@ void GetRecords()
     ViewRecords(records);
 }
 
+// Extra methods
+
 string GetDate(string message) //will use it display message to user about wanted input
 {
     Console.WriteLine(message);
@@ -247,4 +425,6 @@ int GetNumber(string message)
 
 // Record is a new C# 9 feature. It is a reference type that provides built-in functionality for encapsulating data.
 // It is immutable(cannot be changed after it is created) by default and provides value-based equality.
-record WalkingRecord(int Id, DateTime Date, int Meters);
+record RecordWithHabit(int Id, DateTime Date, int Quantity, string HabitName, string MeasurementUnit);
+
+record Habit(int Id, string Name, string UnitOfMeasurement);

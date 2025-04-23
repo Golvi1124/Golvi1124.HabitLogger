@@ -1,4 +1,4 @@
-# Habit Logger
+# Habit Logger (WIP)
 
 ## Tasks for the project:  
 Using guidelines from The C# Academy course - [Link to page](https://thecsharpacademy.com/project/12/habit-logger)
