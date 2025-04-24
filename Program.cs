@@ -1,9 +1,15 @@
 ﻿/*
 
 --------------------------------------------------------------------------------------------------------
-
+Option to delete all info in tables to seed them? Give it as an option in the menu?
 --------------------------------------------------------------------------------------------------------
+int GetRandomHabitId()
+what if we have more than 5 habits in the database? since user can add more habits
 
+The first method takes will return an integer array and takes parameters that will serve as the amount of random values generated and range (min and max). 
+In line 4 we create an array with the desired size. We've learned in previous lessons that arrays can't have variable size such as Lists. 
+We then return an array  of values that will populate the quantity column.
+..............soo change to list?!
 --------------------------------------------------------------------------------------------------------
  */
 
@@ -65,10 +71,10 @@ void HabitMenu()
             new SelectionPrompt<string>()
                 .Title("Choose a Habit operation:")
                 .AddChoices(
-                    "View Habits", 
-                    "Add Habit", 
-                    "Update Habit", 
-                    "Delete Habit", 
+                    "View Habits",
+                    "Add Habit",
+                    "Update Habit",
+                    "Delete Habit",
                     "Back")
         );
 
@@ -103,10 +109,10 @@ void RecordMenu()
             new SelectionPrompt<string>()
                 .Title("Choose a Record operation:")
                 .AddChoices(
-                "View Records", 
-                "Add Record", 
-                "Update Record", 
-                "Delete Record", 
+                "View Records",
+                "Add Record",
+                "Update Record",
+                "Delete Record",
                 "Back")
         );
 
@@ -130,9 +136,6 @@ void RecordMenu()
         }
     }
 }
-
-
-
 
 
 void CreateDatabase()
@@ -168,7 +171,97 @@ void CreateDatabase()
             tableCmd.ExecuteNonQuery();
         }
     }
+    SeedData(); // Call the SeedData method to populate the database with initial data
 }
+
+// Seed data
+
+//The purpose of this method is to check if any table is empty, since we only want to seed data if both tables are empty.
+bool IsTableEmpty(string tableName)
+{
+    using (SqliteConnection connection = new(connectionString))
+    using (SqliteCommand command = connection.CreateCommand())
+    {
+        connection.Open();
+        command.CommandText = $"SELECT COUNT(*) FROM {tableName}";
+        long count = (long)command.ExecuteScalar();
+        return count == 0; //This means it will be true if no rows are found and false otherwise.
+    }
+}
+
+void SeedData()
+{
+    bool recordsTableEmpty = IsTableEmpty("records");
+    bool habitsTableEmpty = IsTableEmpty("habits");
+
+    if (!recordsTableEmpty && !habitsTableEmpty)
+        return;
+
+    string[] habitNames = { "Reading", "Running", "Chocolate", "Drinking Water", "Glasses of Wine" };
+    string[] habitUnits = { "Pages", "Meters", "Grams", "Mililiters", "Mililiters" };
+
+    string[] dates = GenerateRandomDates(100);
+    int[] quantities = GenerateRandomQuantities(100, 0, 2000); // to collect 100 numbers and the range is from 0 to 2000.
+
+    using (SqliteConnection connection = new(connectionString)) //isn't it missing a using statement for command?
+    {
+        connection.Open();
+
+        for (int i = 0; i < habitNames.Length; i++)
+        {
+            var insertSql = "INSERT INTO habits (Name, MeasurementUnit) VALUES (habitNames[i], habitUnits[i]);";
+            var command = new SqliteCommand(insertSql, connection);
+
+            command.ExecuteNonQuery();
+        }
+
+        for (int i = 0; i < 100; i++)
+        {
+            var insertSql = "INSERT INTO records (Date, Quantity, HabitId) VALUES (dates[i], quantities[i], GetRandomHabitId());";
+            var command = new SqliteCommand(insertSql, connection);
+
+            command.ExecuteNonQuery();
+        }
+    }
+}
+
+int[] GenerateRandomQuantities(int count, int min, int max)
+{
+    Random random = new();
+    int[] quantities = new int[count];
+
+    for (int i = 0; i < count; i++)
+    {
+        // max + 1 because the top range is excluded 
+        quantities[i] = random.Next(min, max + 1);
+    }
+    return quantities;
+}
+
+string[] GenerateRandomDates(int count)
+{
+    DateTime startDate = new DateTime(2023, 1, 1);
+    DateTime endDate = DateTime.Now; // current date...check if this works
+    TimeSpan timeSpan = endDate - startDate;
+
+    string[] randomDateStrings = new string[count];
+    Random random = new();
+
+    for (int i = 0; i < count; i++)
+    {
+        int daysToAdd = random.Next(0, (int)timeSpan.TotalDays);
+        DateTime randomDate = startDate.AddDays(daysToAdd);
+        randomDateStrings[i] = randomDate.ToString("dd-MM-yy");
+    }
+    return randomDateStrings;
+}
+
+int GetRandomHabitId()
+{
+    Random random = new();
+    return random.Next(1, 6); // Assuming you have 5 habits in the database
+}
+
 
 // Habit handling methods
 
@@ -375,7 +468,7 @@ void ViewRecords(List<RecordWithHabit> records) // for visualizing the records i
 
     foreach (var record in records)
     {
-        table.AddRow(record.Id.ToString(), record.Date.ToString(), $"{record.Quantity} {record.MeasurementUnit}", record.HabitName.ToString());
+        table.AddRow(record.Id.ToString(), record.Date.ToString("D"), $"{record.Quantity} {record.MeasurementUnit}", record.HabitName.ToString());
     }
 
     AnsiConsole.Write(table); // write the table to the console
