@@ -1,28 +1,9 @@
 ﻿/*
- Need to adjust things like this (habit is running so not gonna work for this or in a future):
 
-    Please enter the ID of the habit you want to add a record for.
-    1
-    Please enter number of meters walked (no decimals or negatives allowed) or enter 0 to go back to Main Menu.
 --------------------------------------------------------------------------------------------------------
-Please enter the ID of the record you want to update.
-1
-Do you want to update the date? [y/n] (y): n
-Do you want to update -> the distance? <-   [y/n] (y): y
-Please enter the new number of meters walked (no decimals or negatives allowed) or enter 0 to go back to Main Menu.
-45
-DOESNT WORK/UPDATE THE ENTRY
+
 --------------------------------------------------------------------------------------------------------
-void UpdateHabit()
-=> Microsoft.Data.Sqlite.SqliteException: 'SQLite Error 1: 'no such column: Unit'.' 
-in     string query;
-    if (updateName && updateUnit)
-    {
-        query = $"UPDATE habits SET Name = '{name}', MeasurementUnit = '{unit}' WHERE Id = {id}";
-    }
-    else if (updateName && !updateUnit)
-    {
-        query = $"UPDATE habits SET Name = '{name}' WHERE Id = {id}";           <==
+
 --------------------------------------------------------------------------------------------------------
  */
 
@@ -313,7 +294,7 @@ void DeleteRecord()
     using (SqliteCommand deleteCmd = connection.CreateCommand())
     {
         connection.Open();
-        deleteCmd.CommandText = $"DELETE FROM walkingHabit WHERE Id = {id}"; // delete the record with the given id
+        deleteCmd.CommandText = $"DELETE FROM records WHERE Id = {id}"; // delete the record with the given id
         int rowsAffected = deleteCmd.ExecuteNonQuery();
         if (rowsAffected != 0)
         {
@@ -355,25 +336,25 @@ void UpdateRecord()
         date = GetDate("\nEnter the new date (format - dd-mm-yy) or insert 0 to Go Back to Main Menu:\n");
     }
 
-    bool updateQuantity = AnsiConsole.Confirm("Do you want to update the distance?");
+    bool updateQuantity = AnsiConsole.Confirm("Do you want to update the quantity?");
     int quantity = 0;
     if (updateQuantity)
     {
-        quantity = GetNumber("\nPlease enter the new number of meters walked (no decimals or negatives allowed) or enter 0 to go back to Main Menu.");
+        quantity = GetNumber("\nPlease enter the new quantity (no decimals or negatives allowed) or enter 0 to go back to Main Menu.");
     }
 
     string query; // querry for each combination of updates
     if (updateDate && updateQuantity)
     {
-        query = $"UPDATE walkingHabit SET date = '{date}', Meters = {quantity} WHERE Id = {id}";
+        query = $"UPDATE records SET date = '{date}', Quantity = {quantity} WHERE Id = {id}";
     }
     else if (updateDate && !updateQuantity)
     {
-        query = $"UPDATE walkingHabit SET date = '{date}' WHERE Id = {id}";
+        query = $"UPDATE records SET date = '{date}' WHERE Id = {id}";
     }
     else
     {
-        query = $"UPDATE walkingHabit SET Meters = {quantity} WHERE Id = {id}";
+        query = $"UPDATE records SET Quantity = {quantity} WHERE Id = {id}";
     }
 
     using (SqliteConnection connection = new(connectionString))
