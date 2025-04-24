@@ -1,4 +1,32 @@
-﻿using System.Globalization;
+﻿/*
+ Need to adjust things like this (habit is running so not gonna work for this or in a future):
+
+    Please enter the ID of the habit you want to add a record for.
+    1
+    Please enter number of meters walked (no decimals or negatives allowed) or enter 0 to go back to Main Menu.
+--------------------------------------------------------------------------------------------------------
+Please enter the ID of the record you want to update.
+1
+Do you want to update the date? [y/n] (y): n
+Do you want to update -> the distance? <-   [y/n] (y): y
+Please enter the new number of meters walked (no decimals or negatives allowed) or enter 0 to go back to Main Menu.
+45
+DOESNT WORK/UPDATE THE ENTRY
+--------------------------------------------------------------------------------------------------------
+void UpdateHabit()
+=> Microsoft.Data.Sqlite.SqliteException: 'SQLite Error 1: 'no such column: Unit'.' 
+in     string query;
+    if (updateName && updateUnit)
+    {
+        query = $"UPDATE habits SET Name = '{name}', MeasurementUnit = '{unit}' WHERE Id = {id}";
+    }
+    else if (updateName && !updateUnit)
+    {
+        query = $"UPDATE habits SET Name = '{name}' WHERE Id = {id}";           <==
+--------------------------------------------------------------------------------------------------------
+ */
+
+using System.Globalization;
 using Microsoft.Data.Sqlite;
 using Spectre.Console;
 
@@ -23,6 +51,7 @@ void MainMenu()
                 .AddChoices(
                     "Add Habit",
                     "Delete Habit",
+                    "View Habits", 
                     "Update Habit",
                     "Add Record",
                     "Delete Record",
@@ -40,10 +69,12 @@ void MainMenu()
             case "Delete Habit":
                 DeleteHabit();
                 break;
+            case "View Habits":
+                GetHabits();
+                break; 
             case "Update Habit":
                 UpdateHabit();
                 break;
-            // no viewing seperately Habits??
             case "Add Record":
                 AddRecord();
                 break;
@@ -147,6 +178,18 @@ void DeleteHabit()
     }
 }
 
+void ViewHabits(List<Habit> habits) // for visualizing the habits in a table
+{
+    var table = new Table(); // Spectre Console table 
+    table.AddColumn("Id"); // table Class from Spectre Console
+    table.AddColumn("Name");
+    table.AddColumn("Unit of Measurement");
+    foreach (var habit in habits)
+    {
+        table.AddRow(habit.Id.ToString(), habit.Name.ToString(), habit.UnitOfMeasurement.ToString());
+    }
+    AnsiConsole.Write(table); // write the table to the console
+}
 void UpdateHabit()
 {
     GetHabits();
@@ -185,7 +228,7 @@ void UpdateHabit()
     }
     else
     {
-        query = $"UPDATE habits SET Unit = '{unit}' WHERE Id = {id}";
+        query = $"UPDATE habits SET MeasurementUnit = '{unit}' WHERE Id = {id}";
     }
 
     using (SqliteConnection connection = new(connectionString))
@@ -283,16 +326,17 @@ void DeleteRecord()
     }
 }
 
-void ViewRecords(List<WalkingRecord> records) // for visualizing the records in a table
+void ViewRecords(List<RecordWithHabit> records) // for visualizing the records in a table
 {
     var table = new Table(); // Spectre Console table 
     table.AddColumn("Id"); // table Class from Spectre Console
     table.AddColumn("Date");
     table.AddColumn("Amount");
+    table.AddColumn("Habit");
 
     foreach (var record in records)
     {
-        table.AddRow(record.Id.ToString(), record.Date.ToString("dd-MM-yy"), record.Meters.ToString());
+        table.AddRow(record.Id.ToString(), record.Date.ToString(), $"{record.Quantity} {record.MeasurementUnit}", record.HabitName.ToString());
     }
 
     AnsiConsole.Write(table); // write the table to the console
@@ -343,15 +387,18 @@ void UpdateRecord()
 
 void GetRecords()
 {
-    List<WalkingRecord> records = new(); // Representing rows in db
+    List<RecordWithHabit> records = new(); // Representing rows in db
 
     using (SqliteConnection connection = new(connectionString))
     using (SqliteCommand getCmd = connection.CreateCommand())
     {
         connection.Open();
-        getCmd.CommandText = "SELECT * FROM walkingHabit"; // select all records from the table
+        getCmd.CommandText = @"
+    SELECT records.Id, records.Date, records.Quantity, records.HabitId, habits.Name AS HabitName, habits.MeasurementUnit
+    FROM records
+    INNER JOIN habits ON records.HabitId = habits.Id";
 
-        using (var reader = getCmd.ExecuteReader()) //(SqliteDataReader reader = command.ExecuteReader())
+        using (SqliteDataReader reader = getCmd.ExecuteReader()) //(SqliteDataReader reader = command.ExecuteReader())
         {
             /*checking if the reader has rows and if it does we will read the data in a loop. 
             For each row found in the table, we will add a new WalkingRecord to the list.*/
@@ -364,10 +411,13 @@ void GetRecords()
                     to prevent the app from crashing in case the operation against the database goes wrong.*/
                     try
                     {
-                        records.Add(new WalkingRecord(
+                        records.Add(
+                        new RecordWithHabit(
                             reader.GetInt32(0), // Id
-                            DateTime.ParseExact(reader.GetString(1), "dd-MM-yy", CultureInfo.InvariantCulture), // Date
-                            reader.GetInt32(2) // Meters
+                            DateTime.ParseExact(reader.GetString(1), "dd-MM-yy", CultureInfo.InvariantCulture),
+                            reader.GetInt32(2), // Quantity
+                            reader.GetString(4), // HabitName
+                            reader.GetString(5) // MeasurementUnit
                             )
                          );
                     }

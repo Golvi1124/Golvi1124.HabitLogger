@@ -25,8 +25,8 @@ This is specially helpful during development so you don't have to reinsert data 
 - [ ] Create a report functionality where the users can view specific information (i.e. how many times the user ran in a year? how many kms?) SQL allows you to ask very interesting things from your database.
 
 
-
-
+  
+ADDED   "View Habits", 
 
 
 
