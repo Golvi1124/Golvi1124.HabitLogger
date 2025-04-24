@@ -47,6 +47,8 @@ ADDED   "View Habits",
 ---
 ### Improvements:
 - Installed **Spectre Console NuGet Package** to make it easier to create beautiful, cross platform, console applications.
+- Added option to delete all data from the database
+
 
 
 ### Small extra improvements:

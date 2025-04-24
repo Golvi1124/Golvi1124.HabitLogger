@@ -1,15 +1,15 @@
 ﻿/*
-
+                    "Specific Search", 
+* User can search, how many times they did a specific habit in a specific time period
+* Top 3 habits ....etc
+                    "Add Random Data",
+* User can choose how many random records they want to add
+                    "Wipe All Data", 
+...need to change that program doesn automatically seed data back
 --------------------------------------------------------------------------------------------------------
-Option to delete all info in tables to seed them? Give it as an option in the menu?
+Something with data seeding still not good
 --------------------------------------------------------------------------------------------------------
-int GetRandomHabitId()
-what if we have more than 5 habits in the database? since user can add more habits
-
-The first method takes will return an integer array and takes parameters that will serve as the amount of random values generated and range (min and max). 
-In line 4 we create an array with the desired size. We've learned in previous lessons that arrays can't have variable size such as Lists. 
-We then return an array  of values that will populate the quantity column.
-..............soo change to list?!
+Change arrays to lists for more flexibility
 --------------------------------------------------------------------------------------------------------
  */
 
@@ -35,7 +35,9 @@ void MainMenu()
                 .AddChoices(
                     "Habit Options",
                     "Record Options",
-                    "Specific information",
+                    "Specific Search", // This option is not implemented in the provided code
+                    "Add Random Data", // This option is not implemented in the provided code                    
+                    "Wipe All Data", // This option is not implemented in the provided code
                     "Quit"
                     )
         );
@@ -48,9 +50,13 @@ void MainMenu()
             case "Record Options":
                 RecordMenu();
                 break;
-            case "Specific information":
+            case "Specific Search":
                 // SpecificSearch(); seperate Menu first?..multi choice? // This method is not implemented in the provided code
                 Console.WriteLine("Coming soon!");
+                break;
+            case "Wipe All Data":
+                if (AnsiConsole.Confirm("Are you sure you want to delete ALL data?"))
+                    WipeData();
                 break;
             case "Quit":
                 Console.WriteLine("Goodbye!");
@@ -174,6 +180,19 @@ void CreateDatabase()
     SeedData(); // Call the SeedData method to populate the database with initial data
 }
 
+void WipeData()
+{
+    using (SqliteConnection connection = new(connectionString))
+    using (SqliteCommand wipeCmd = connection.CreateCommand())
+    {
+        connection.Open();
+        wipeCmd.CommandText = "DELETE FROM records; DELETE FROM habits;";
+        wipeCmd.ExecuteNonQuery();
+    }
+    Console.WriteLine("All data wiped.");
+}
+
+
 // Seed data
 
 //The purpose of this method is to check if any table is empty, since we only want to seed data if both tables are empty.
@@ -209,7 +228,7 @@ void SeedData()
 
         for (int i = 0; i < habitNames.Length; i++)
         {
-            var insertSql = "INSERT INTO habits (Name, MeasurementUnit) VALUES (habitNames[i], habitUnits[i]);";
+            var insertSql = $"INSERT INTO habits (Name, MeasurementUnit) VALUES ('{habitNames[i]}', '{habitUnits[i]}');";
             var command = new SqliteCommand(insertSql, connection);
 
             command.ExecuteNonQuery();
@@ -217,7 +236,7 @@ void SeedData()
 
         for (int i = 0; i < 100; i++)
         {
-            var insertSql = "INSERT INTO records (Date, Quantity, HabitId) VALUES (dates[i], quantities[i], GetRandomHabitId());";
+            var insertSql = $"INSERT INTO records (Date, Quantity, HabitId) VALUES ('{dates[i]}', {quantities[i]}, {GetRandomHabitId()});";
             var command = new SqliteCommand(insertSql, connection);
 
             command.ExecuteNonQuery();
@@ -258,8 +277,27 @@ string[] GenerateRandomDates(int count)
 
 int GetRandomHabitId()
 {
-    Random random = new();
-    return random.Next(1, 6); // Assuming you have 5 habits in the database
+    using (SqliteConnection connection = new(connectionString))
+    using (SqliteCommand command = connection.CreateCommand())
+    {
+        connection.Open();
+        command.CommandText = "SELECT Id FROM habits";
+
+        var reader = command.ExecuteReader();
+        List<int> ids = new();
+        while (reader.Read())
+        {
+            ids.Add(reader.GetInt32(0));
+        }
+
+        if (ids.Count == 0)
+        {
+            throw new Exception("No habits found in the database.");
+        }
+
+        Random random = new();
+        return ids[random.Next(ids.Count)];
+    }
 }
 
 
@@ -306,7 +344,7 @@ void DeleteHabit()
         {
             Console.WriteLine("Habit not found.");
         }
-        deleteCmd.ExecuteNonQuery();
+        // deleteCmd.ExecuteNonQuery(); - this line is not needed since we already executed the command above
     }
 }
 
@@ -423,7 +461,7 @@ void AddRecord()
     GetHabits();
     int habitId = GetNumber("\nPlease enter the ID of the habit you want to add a record for.");
 
-    int quantity = GetNumber("\nPlease enter number of meters walked (no decimals or negatives allowed) or enter 0 to go back to Main Menu.");
+    int quantity = GetNumber("\nPlease enter number of habit's amount (no decimals or negatives allowed) or enter 0 to go back to Main Menu.");
 
     Console.Clear();
     using (SqliteConnection connection = new(connectionString))
