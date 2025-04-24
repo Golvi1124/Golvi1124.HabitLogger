@@ -23,59 +23,117 @@ void MainMenu()
 
     while (isMenuRunning)
     {
-        // Spectre Connsole NuGet allows user to use arrows to select choices.
-        // Promt method returns a string which will be the user choice..stored in variable usersChoice
-
         var usersChoice = AnsiConsole.Prompt(
             new SelectionPrompt<string>()
                 .Title("What do you want to do?")
                 .AddChoices(
-                    "Add Habit",
-                    "Delete Habit",
-                    "View Habits", 
-                    "Update Habit",
-                    "Add Record",
-                    "Delete Record",
-                    "View Records",
-                    "Update Record",
+                    "Habit Options",
+                    "Record Options",
+                    "Specific information",
                     "Quit"
-                )
-            );
+                    )
+        );
 
         switch (usersChoice)
         {
+            case "Habit Options":
+                HabitMenu();
+                break;
+            case "Record Options":
+                RecordMenu();
+                break;
+            case "Specific information":
+                // SpecificSearch(); seperate Menu first?..multi choice? // This method is not implemented in the provided code
+                Console.WriteLine("Coming soon!");
+                break;
+            case "Quit":
+                Console.WriteLine("Goodbye!");
+                isMenuRunning = false;
+                break;
+        }
+    }
+}
+
+
+void HabitMenu()
+{
+    var isHabitMenuRunning = true;
+
+    while (isHabitMenuRunning)
+    {
+        var habitChoice = AnsiConsole.Prompt(
+            new SelectionPrompt<string>()
+                .Title("Choose a Habit operation:")
+                .AddChoices(
+                    "View Habits", 
+                    "Add Habit", 
+                    "Update Habit", 
+                    "Delete Habit", 
+                    "Back")
+        );
+
+        switch (habitChoice)
+        {
+            case "View Habits":
+                GetHabits();
+                break;
             case "Add Habit":
                 AddHabit();
+                break;
+            case "Update Habit":
+                UpdateHabit();
                 break;
             case "Delete Habit":
                 DeleteHabit();
                 break;
-            case "View Habits":
-                GetHabits();
-                break; 
-            case "Update Habit":
-                UpdateHabit();
+            case "Back":
+                isHabitMenuRunning = false;
+                break;
+        }
+    }
+}
+
+void RecordMenu()
+{
+    var isRecordMenuRunning = true;
+
+    while (isRecordMenuRunning)
+    {
+        var recordChoice = AnsiConsole.Prompt(
+            new SelectionPrompt<string>()
+                .Title("Choose a Record operation:")
+                .AddChoices(
+                "View Records", 
+                "Add Record", 
+                "Update Record", 
+                "Delete Record", 
+                "Back")
+        );
+
+        switch (recordChoice)
+        {
+            case "View Records":
+                GetRecords();
                 break;
             case "Add Record":
                 AddRecord();
                 break;
-            case "Delete Record":
-                DeleteRecord();
-                break;
-            case "View Records":
-                GetRecords();
-                break;
             case "Update Record":
                 UpdateRecord();
                 break;
-            case "Quit":
-                Console.WriteLine("Goddbye!");
-                isMenuRunning = false;
+            case "Delete Record":
+                DeleteRecord();
                 break;
-                // Because of using Spectre console, don't need to use default case, since user can't select anything else than the options
+            case "Back":
+                isRecordMenuRunning = false;
+                break;
         }
     }
 }
+
+
+
+
 
 void CreateDatabase()
 {
@@ -264,8 +322,8 @@ void GetHabits()
 
 
 
-    // Record handling methods
-    void AddRecord()
+// Record handling methods
+void AddRecord()
 {
     string date = GetDate("\nEnter the date (format - dd-mm-yy) or insert 0 to Go Back to Main Menu:\n");
 
