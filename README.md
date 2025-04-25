@@ -52,7 +52,7 @@ ADDED   "View Habits",
 
 
 ### Small extra improvements:
-- Using file-scoped namespaces to reduce nesting
+- Using file-scoped namespaces to reduce nesting.
 - Use same structure and/or improve readability.   
 	- 'using' declaration expression (C# 9+) for cleaner disposal  
 	>Before:   `using (var connection = new SqliteConnection(connectionString)))`  
@@ -60,5 +60,6 @@ ADDED   "View Habits",
 	- Make command more descriptive (changed depending on method)  
 	>Before:   `command.ExecuteNonQuery();`  = generic, but can be confusing if you have multiple commands  
 	After:    `deleteCmd.ExecuteNonQuery();` = more descriptive (better readability)  
+- Changed arrays to lists where I wasn't sure about future sizes + for more flexibility.
 
 

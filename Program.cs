@@ -7,15 +7,16 @@
                     "Wipe All Data", 
 ...need to change that program doesn automatically seed data back
 --------------------------------------------------------------------------------------------------------
-Something with data seeding still not good
+
 --------------------------------------------------------------------------------------------------------
-Change arrays to lists for more flexibility
+
 --------------------------------------------------------------------------------------------------------
  */
 
 using System.Globalization;
 using Microsoft.Data.Sqlite;
 using Spectre.Console;
+using System.Linq;
 
 string connectionString = @"Data Source = habit-logger.db"; // path to the database file. If it doesn't exist, it will be created in the same directory as the executable
 
@@ -36,8 +37,8 @@ void MainMenu()
                     "Habit Options",
                     "Record Options",
                     "Specific Search", // This option is not implemented in the provided code
+                    "Wipe All Data",
                     "Add Random Data", // This option is not implemented in the provided code                    
-                    "Wipe All Data", // This option is not implemented in the provided code
                     "Quit"
                     )
         );
@@ -58,6 +59,10 @@ void MainMenu()
                 if (AnsiConsole.Confirm("Are you sure you want to delete ALL data?"))
                     WipeData();
                 break;
+            case "Add Random Data":
+                // AddRandomData(); // This method is not implemented in the provided code
+                Console.WriteLine("Coming soon!");
+                break;
             case "Quit":
                 Console.WriteLine("Goodbye!");
                 isMenuRunning = false;
@@ -66,6 +71,13 @@ void MainMenu()
     }
 }
 
+void AddRandomData()
+{
+    // check if tables are empty
+    // if they are not, ask the user if they want to wipe the data y/n
+    // Ask how many random records they want to add
+    // run SeedData method with the number of records as a parameter
+}
 
 void HabitMenu()
 {
@@ -146,7 +158,6 @@ void RecordMenu()
 
 void CreateDatabase()
 {
-    {
         using (SqliteConnection connection = new(connectionString))
         using (SqliteCommand tableCmd = connection.CreateCommand())
         {
@@ -176,7 +187,6 @@ void CreateDatabase()
                     )";
             tableCmd.ExecuteNonQuery();
         }
-    }
     SeedData(); // Call the SeedData method to populate the database with initial data
 }
 
@@ -219,8 +229,8 @@ void SeedData()
     string[] habitNames = { "Reading", "Running", "Chocolate", "Drinking Water", "Glasses of Wine" };
     string[] habitUnits = { "Pages", "Meters", "Grams", "Mililiters", "Mililiters" };
 
-    string[] dates = GenerateRandomDates(100);
-    int[] quantities = GenerateRandomQuantities(100, 0, 2000); // to collect 100 numbers and the range is from 0 to 2000.
+    List<string> dates = GenerateRandomDates(100);
+    List<int> quantities = GenerateRandomQuantities(100, 0, 2000); // to collect 100 numbers and the range is from 0 to 2000.
 
     using (SqliteConnection connection = new(connectionString)) //isn't it missing a using statement for command?
     {
@@ -244,33 +254,33 @@ void SeedData()
     }
 }
 
-int[] GenerateRandomQuantities(int count, int min, int max)
+List<int> GenerateRandomQuantities(int count, int min, int max)
 {
     Random random = new();
-    int[] quantities = new int[count];
+    List<int> quantities = new();
 
     for (int i = 0; i < count; i++)
     {
         // max + 1 because the top range is excluded 
-        quantities[i] = random.Next(min, max + 1);
+        quantities.Add(random.Next(min, max + 1)); 
     }
     return quantities;
 }
 
-string[] GenerateRandomDates(int count)
+List<string> GenerateRandomDates(int count)
 {
     DateTime startDate = new DateTime(2023, 1, 1);
     DateTime endDate = DateTime.Now; // current date...check if this works
     TimeSpan timeSpan = endDate - startDate;
 
-    string[] randomDateStrings = new string[count];
+    List<string> randomDateStrings = new(count);
     Random random = new();
 
     for (int i = 0; i < count; i++)
     {
         int daysToAdd = random.Next(0, (int)timeSpan.TotalDays);
         DateTime randomDate = startDate.AddDays(daysToAdd);
-        randomDateStrings[i] = randomDate.ToString("dd-MM-yy");
+        randomDateStrings.Add(randomDate.ToString("dd-MM-yy")); // format the date to dd-mm-yy
     }
     return randomDateStrings;
 }
@@ -344,7 +354,6 @@ void DeleteHabit()
         {
             Console.WriteLine("Habit not found.");
         }
-        // deleteCmd.ExecuteNonQuery(); - this line is not needed since we already executed the command above
     }
 }
 
