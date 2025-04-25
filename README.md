@@ -48,6 +48,9 @@ ADDED   "View Habits",
 ### Improvements:
 - Installed **Spectre Console NuGet Package** to make it easier to create beautiful, cross platform, console applications.
 - Added option to delete all data from the database
+- Made changes, that instead of tables being automatically seeded with data, user can choose how many records to add after confirming that they want to delete old data, if it exists. 
+
+
 
 
 
@@ -61,5 +64,6 @@ ADDED   "View Habits",
 	>Before:   `command.ExecuteNonQuery();`  = generic, but can be confusing if you have multiple commands  
 	After:    `deleteCmd.ExecuteNonQuery();` = more descriptive (better readability)  
 - Changed arrays to lists where I wasn't sure about future sizes + for more flexibility.
+- After wiping all data ID numbers resets
 
 

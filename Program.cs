@@ -1,12 +1,7 @@
 ﻿/*
-                    "Specific Search", 
-* User can search, how many times they did a specific habit in a specific time period
-* Top 3 habits ....etc
---------------------------------------------------------------------------------------------------------
 
---------------------------------------------------------------------------------------------------------
+Seperate methods in different files
 
---------------------------------------------------------------------------------------------------------
  */
 
 using System.Globalization;
@@ -32,7 +27,7 @@ void MainMenu()
                 .AddChoices(
                     "Habit Options",
                     "Record Options",
-                    "Specific Search", // This option is not implemented in the provided code
+                    "Specific Search", 
                     "Wipe All Data",
                     "Add Random Data",                    
                     "Quit"
@@ -48,8 +43,7 @@ void MainMenu()
                 RecordMenu();
                 break;
             case "Specific Search":
-                // SpecificSearch(); seperate Menu first?..multi choice? // This method is not implemented in the provided code
-                Console.WriteLine("Coming soon!");
+                SearchMenu();
                 break;
             case "Wipe All Data":
                 if (AnsiConsole.Confirm("Are you sure you want to delete ALL data?"))
@@ -66,34 +60,44 @@ void MainMenu()
     }
 }
 
-void AddRandomData()
+void SearchMenu()
 {
-    if (!IsTableEmpty("habits") || !IsTableEmpty("records")) // check if the tables are empty before seeding data
+    var isSearchMenuRunning = true;
+
+    while (isSearchMenuRunning)
     {
-        var wipeData = AnsiConsole.Confirm("Tables should be emptied first. Do you want to wipe all data?");
-        if (wipeData)
-            WipeData();
-        else
-            return;
-    }
-
-    // Ensuring that habits are seeded before records
-    if (IsTableEmpty("habits")) SeedHabits();
-
-    int numberOfRecords = AnsiConsole.Ask<int>("How many random records do you want to add?");
-
-    List<string> dates = GenerateRandomDates(numberOfRecords);
-    List<int> quantities = GenerateRandomQuantities(numberOfRecords, 0, 2000);
-
-    using (SqliteConnection connection = new(connectionString))
-    {
-        connection.Open();
-
-        for (int i = 0; i < numberOfRecords; i++)
+        var searchChoice = AnsiConsole.Prompt(
+            new SelectionPrompt<string>()
+                .Title("Choose a Search operation:")
+                .AddChoices(
+                    "Chart of Habits by Amount",
+                    "Top 3 Habits",
+                    "Average Habit Quantity",
+                    "See Entries for Specific Habit",
+                    "See Entries for Specific Month",
+                    "Back")
+        );
+        switch (searchChoice)
         {
-            var insertSql = $"INSERT INTO records (Date, Quantity, HabitId) VALUES ('{dates[i]}', {quantities[i]}, {GetRandomHabitId()});";
-            var command = new SqliteCommand(insertSql, connection);
-            command.ExecuteNonQuery();
+            case "Chart of Habits by Amount":
+                //ShowChart();
+                break;
+            case "Top 3 Habits":
+                ShowTopHabits();
+                break;
+            case "Average Habit Quantity":
+                // ShowAverage();
+                break;
+            case "See Entries for Specific Habit":
+                // ShowSpecificHabit();
+                break;
+            case "See Entries for Specific Month":
+                // ShowSpecificMonth();
+                break;
+            case "Back":
+                isSearchMenuRunning = false;
+                break;
+
         }
     }
 }
@@ -177,35 +181,105 @@ void RecordMenu()
 
 void CreateDatabase()
 {
-        using (SqliteConnection connection = new(connectionString))
-        using (SqliteCommand tableCmd = connection.CreateCommand())
-        {
-            connection.Open();
+    using (SqliteConnection connection = new(connectionString))
+    using (SqliteCommand tableCmd = connection.CreateCommand())
+    {
+        connection.Open();
 
-            tableCmd.CommandText =
-                @"CREATE TABLE IF NOT EXISTS records (
+        tableCmd.CommandText =
+            @"CREATE TABLE IF NOT EXISTS records (
                     Id INTEGER PRIMARY KEY AUTOINCREMENT,
                     Date TEXT, 
                     Quantity INTEGER,
                     HabitId INTEGER,
                     FOREIGN KEY (HabitId) REFERENCES habits(Id) ON DELETE CASCADE
                     )";
-            /*
-                * HabitId property associate all rows with a row in the Habits table. The association happens due to the FOREIGN KEY constraint.
-            Script's structure : FOREIGN KEY(<column that will be linked to the external table>) REFERENCES habits(<column we will link to, in the external table>)
-                * ON DELETE CASCADE means if we delete a record in the habits table, all records that have it as a foreign key will be deleted in the records table. 
-            It's a very important script for data integrity.
-             */
-            tableCmd.ExecuteNonQuery(); // call the ExecuteNonQuery method when we don't want any data to be returned
+        /*
+            * HabitId property associate all rows with a row in the Habits table. The association happens due to the FOREIGN KEY constraint.
+        Script's structure : FOREIGN KEY(<column that will be linked to the external table>) REFERENCES habits(<column we will link to, in the external table>)
+            * ON DELETE CASCADE means if we delete a record in the habits table, all records that have it as a foreign key will be deleted in the records table. 
+        It's a very important script for data integrity.
+         */
+        tableCmd.ExecuteNonQuery(); // call the ExecuteNonQuery method when we don't want any data to be returned
 
-            tableCmd.CommandText =
-                @"CREATE TABLE IF NOT EXISTS habits (
+        tableCmd.CommandText =
+            @"CREATE TABLE IF NOT EXISTS habits (
                     Id INTEGER PRIMARY KEY AUTOINCREMENT,
                     Name TEXT, 
                     MeasurementUnit TEXT
                     )";
-            tableCmd.ExecuteNonQuery();
+        tableCmd.ExecuteNonQuery();
+    }
+}
+
+
+
+
+void ShowTopHabits()
+{
+    // Fetch records from the database
+    List<RecordWithHabit> records = GetRecords();
+
+    // Get top 3 habits based on the quantity
+    var topHabits = records
+                        .GroupBy(r => r.HabitName)  // Group records by HabitName
+                        .Select(g => new
+                        {
+                            HabitName = g.Key,
+                            TotalQuantity = g.Sum(r => r.Quantity)  // Sum the quantities for each habit
+                        })
+                        .OrderByDescending(h => h.TotalQuantity)
+                        .Take(3)
+                        .ToList();
+
+    // Display the top 3 habits in a table
+    var table = new Table();
+    table.AddColumn("Rank");
+    table.AddColumn("Habit Name");
+    table.AddColumn("Total Quantity");
+
+    // Add each of the top 3 habits to the table
+    int rank = 1;
+    foreach (var habit in topHabits)
+    {
+        table.AddRow(rank.ToString(), habit.HabitName, habit.TotalQuantity.ToString());
+        rank++;
+    }
+
+    AnsiConsole.Write(table);  // Write the table to the console
+}
+
+
+void AddRandomData()
+{
+    if (!IsTableEmpty("habits") || !IsTableEmpty("records")) // check if the tables are empty before seeding data
+    {
+        var wipeData = AnsiConsole.Confirm("Tables should be emptied first. Do you want to wipe all data?");
+        if (wipeData)
+            WipeData();
+        else
+            return;
+    }
+
+    // Ensuring that habits are seeded before records
+    if (IsTableEmpty("habits")) SeedHabits();
+
+    int numberOfRecords = AnsiConsole.Ask<int>("How many random records do you want to add?");
+
+    List<string> dates = GenerateRandomDates(numberOfRecords);
+    List<int> quantities = GenerateRandomQuantities(numberOfRecords, 0, 2000);
+
+    using (SqliteConnection connection = new(connectionString))
+    {
+        connection.Open();
+
+        for (int i = 0; i < numberOfRecords; i++)
+        {
+            var insertSql = $"INSERT INTO records (Date, Quantity, HabitId) VALUES ('{dates[i]}', {quantities[i]}, {GetRandomHabitId()});";
+            var command = new SqliteCommand(insertSql, connection);
+            command.ExecuteNonQuery();
         }
+    }
 }
 
 void WipeData()
@@ -658,3 +732,4 @@ int GetNumber(string message)
 record RecordWithHabit(int Id, DateTime Date, int Quantity, string HabitName, string MeasurementUnit);
 
 record Habit(int Id, string Name, string UnitOfMeasurement);
+
