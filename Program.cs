@@ -2,10 +2,6 @@
                     "Specific Search", 
 * User can search, how many times they did a specific habit in a specific time period
 * Top 3 habits ....etc
-                    "Add Random Data",
-* User can choose how many random records they want to add
-                    "Wipe All Data", 
-...need to change that program doesn automatically seed data back
 --------------------------------------------------------------------------------------------------------
 
 --------------------------------------------------------------------------------------------------------
@@ -32,13 +28,13 @@ void MainMenu()
     {
         var usersChoice = AnsiConsole.Prompt(
             new SelectionPrompt<string>()
-                .Title("What do you want to do?")
+                .Title("\nWhat do you want to do?")
                 .AddChoices(
                     "Habit Options",
                     "Record Options",
                     "Specific Search", // This option is not implemented in the provided code
                     "Wipe All Data",
-                    "Add Random Data", // This option is not implemented in the provided code                    
+                    "Add Random Data",                    
                     "Quit"
                     )
         );
@@ -60,8 +56,7 @@ void MainMenu()
                     WipeData();
                 break;
             case "Add Random Data":
-                // AddRandomData(); // This method is not implemented in the provided code
-                Console.WriteLine("Coming soon!");
+                AddRandomData(); 
                 break;
             case "Quit":
                 Console.WriteLine("Goodbye!");
@@ -73,10 +68,34 @@ void MainMenu()
 
 void AddRandomData()
 {
-    // check if tables are empty
-    // if they are not, ask the user if they want to wipe the data y/n
-    // Ask how many random records they want to add
-    // run SeedData method with the number of records as a parameter
+    if (!IsTableEmpty("habits") || !IsTableEmpty("records")) // check if the tables are empty before seeding data
+    {
+        var wipeData = AnsiConsole.Confirm("Tables should be emptied first. Do you want to wipe all data?");
+        if (wipeData)
+            WipeData();
+        else
+            return;
+    }
+
+    // Ensuring that habits are seeded before records
+    if (IsTableEmpty("habits")) SeedHabits();
+
+    int numberOfRecords = AnsiConsole.Ask<int>("How many random records do you want to add?");
+
+    List<string> dates = GenerateRandomDates(numberOfRecords);
+    List<int> quantities = GenerateRandomQuantities(numberOfRecords, 0, 2000);
+
+    using (SqliteConnection connection = new(connectionString))
+    {
+        connection.Open();
+
+        for (int i = 0; i < numberOfRecords; i++)
+        {
+            var insertSql = $"INSERT INTO records (Date, Quantity, HabitId) VALUES ('{dates[i]}', {quantities[i]}, {GetRandomHabitId()});";
+            var command = new SqliteCommand(insertSql, connection);
+            command.ExecuteNonQuery();
+        }
+    }
 }
 
 void HabitMenu()
@@ -187,7 +206,6 @@ void CreateDatabase()
                     )";
             tableCmd.ExecuteNonQuery();
         }
-    SeedData(); // Call the SeedData method to populate the database with initial data
 }
 
 void WipeData()
@@ -196,10 +214,10 @@ void WipeData()
     using (SqliteCommand wipeCmd = connection.CreateCommand())
     {
         connection.Open();
-        wipeCmd.CommandText = "DELETE FROM records; DELETE FROM habits;";
+        wipeCmd.CommandText = "DELETE FROM records; DELETE FROM habits; DELETE FROM sqlite_sequence WHERE name = 'records' OR name = 'habits';";
         wipeCmd.ExecuteNonQuery();
     }
-    Console.WriteLine("All data wiped.");
+    Console.WriteLine("All data wiped and IDs reset.");
 }
 
 
@@ -218,19 +236,10 @@ bool IsTableEmpty(string tableName)
     }
 }
 
-void SeedData()
+void SeedHabits()
 {
-    bool recordsTableEmpty = IsTableEmpty("records");
-    bool habitsTableEmpty = IsTableEmpty("habits");
-
-    if (!recordsTableEmpty && !habitsTableEmpty)
-        return;
-
     string[] habitNames = { "Reading", "Running", "Chocolate", "Drinking Water", "Glasses of Wine" };
     string[] habitUnits = { "Pages", "Meters", "Grams", "Mililiters", "Mililiters" };
-
-    List<string> dates = GenerateRandomDates(100);
-    List<int> quantities = GenerateRandomQuantities(100, 0, 2000); // to collect 100 numbers and the range is from 0 to 2000.
 
     using (SqliteConnection connection = new(connectionString)) //isn't it missing a using statement for command?
     {
@@ -239,14 +248,6 @@ void SeedData()
         for (int i = 0; i < habitNames.Length; i++)
         {
             var insertSql = $"INSERT INTO habits (Name, MeasurementUnit) VALUES ('{habitNames[i]}', '{habitUnits[i]}');";
-            var command = new SqliteCommand(insertSql, connection);
-
-            command.ExecuteNonQuery();
-        }
-
-        for (int i = 0; i < 100; i++)
-        {
-            var insertSql = $"INSERT INTO records (Date, Quantity, HabitId) VALUES ('{dates[i]}', {quantities[i]}, {GetRandomHabitId()});";
             var command = new SqliteCommand(insertSql, connection);
 
             command.ExecuteNonQuery();
