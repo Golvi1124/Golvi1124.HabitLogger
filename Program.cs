@@ -89,7 +89,7 @@ void SearchMenu()
                 ShowAverage();
                 break;
             case "See Entries for Specific Habit":
-                // ShowSpecificHabit();
+                ShowSpecificHabit();
                 break;
             case "See Entries for Specific Month": // menu where start with year
                 // ShowSpecificMonth();
@@ -101,6 +101,87 @@ void SearchMenu()
         }
     }
 }
+
+void ShowSpecificHabit()
+{
+    var isSpecificHabitMenuRunning = true;
+
+    while (isSpecificHabitMenuRunning)
+    {
+
+        // GetHabits() returns void, so we need to modify it to return a list of habits.
+        // Assuming GetHabits() is updated to return a List<Habit>, we can use it here.
+
+        List<Habit> habits = GetHabits(); // Fetch the list of habits from the database.
+
+        if (habits.Count == 0)
+        {
+            Console.WriteLine("No habits found. Returning to the previous menu.");
+            isSpecificHabitMenuRunning = false;
+            return;
+        }
+
+        var habitChoice = AnsiConsole.Prompt(
+            new SelectionPrompt<string>()
+                .Title("Choose a Habit:")
+                .AddChoices(habits.Select(h => h.Name).Concat(new[] { "Back" })) // Adds "Back" option
+);
+        if (habitChoice == "Back")
+        {
+            isSpecificHabitMenuRunning = false;
+            return;
+        }
+
+        // Additional logic for handling the selected habit can be added here.
+        List<(string Date, int Quantity, string MeasurementUnit)> specificHabitData = new();
+
+        using (SqliteConnection connection = new(connectionString))
+        using (SqliteCommand command = connection.CreateCommand())
+        {
+            connection.Open();
+            // Query for specific habit data
+            command.CommandText = @"
+                SELECT records.Date, records.Quantity, habits.MeasurementUnit
+                FROM records
+                INNER JOIN habits ON records.HabitId = habits.Id
+                WHERE habits.Name = @HabitName ";
+
+            command.Parameters.AddWithValue("@HabitName", habitChoice); // Use the selected habit name
+            using (SqliteDataReader reader = command.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    specificHabitData.Add((reader.GetString(0), reader.GetInt32(1), reader.GetString(2)));
+                }
+            }
+        }
+
+        Console.Clear();
+        if (specificHabitData.Count > 0)
+        {
+       
+
+            var specificHabitTable = new Table();
+            specificHabitTable.AddColumn("Date");
+            specificHabitTable.AddColumn("Quantity");
+            specificHabitTable.AddColumn("Measurement Unit");
+
+            foreach (var data in specificHabitData)
+            {
+                specificHabitTable.AddRow(data.Date, data.Quantity.ToString(), data.MeasurementUnit);
+            }
+            AnsiConsole.Write(new Markup($"[bold yellow]Entries for {habitChoice}[/]\n"));
+            AnsiConsole.Write(specificHabitTable);
+        }
+        else
+        {
+            Console.WriteLine($"No entries found for the habit: {habitChoice}.");
+        }
+        // name of list = All you wanna know about {chosen habit}
+    }
+}
+
+
 
 void ShowChart()
 {
@@ -648,46 +729,49 @@ void HabitMenu()
         }
     }
 
-    void GetHabits()
+// Update the GetHabits method to return a List<Habit> instead of void.
+List<Habit> GetHabits()
+{
+    List<Habit> habits = new();
+
+    using (SqliteConnection connection = new(connectionString))
+    using (SqliteCommand getCmd = connection.CreateCommand())
     {
-        List<Habit> habits = new();
+        connection.Open();
+        getCmd.CommandText = "SELECT * FROM habits";
 
-        using (SqliteConnection connection = new(connectionString))
-        using (SqliteCommand getCmd = connection.CreateCommand())
+        using (SqliteDataReader reader = getCmd.ExecuteReader())
         {
-            connection.Open();
-            getCmd.CommandText = "SELECT * FROM habits";
-
-            using (SqliteDataReader reader = getCmd.ExecuteReader())
+            if (reader.HasRows)
             {
-                if (reader.HasRows)
+                while (reader.Read())
                 {
-                    while (reader.Read())
+                    try
                     {
-                        try
-                        {
-                            habits.Add(
-                                new Habit(
+                        habits.Add(
+                            new Habit(
                                 reader.GetInt32(0), // Id
                                 reader.GetString(1), // Name
                                 reader.GetString(2) // MeasurementUnit
-                                )
-                             );
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine($"Error reading record: {ex.Message}. Skipping this record.");
-                        }
+                            )
+                        );
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error reading record: {ex.Message}. Skipping this record.");
                     }
                 }
-                else
-                {
-                    Console.WriteLine("No records found.");
-                }
+            }
+            else
+            {
+                Console.WriteLine("No records found.");
             }
         }
-        ViewHabits(habits);
     }
+
+    // Return the list of habits.
+    return habits;
+}
 
 
 
