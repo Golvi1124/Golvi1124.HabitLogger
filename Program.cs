@@ -92,7 +92,7 @@ void SearchMenu()
                 ShowSpecificHabit();
                 break;
             case "See Entries for Specific Month": // menu where start with year
-                // ShowSpecificMonth();
+                ShowSpecificMonth();
                 break;
             case "Back":
                 isSearchMenuRunning = false;
@@ -101,6 +101,161 @@ void SearchMenu()
         }
     }
 }
+
+void ShowSpecificMonth()
+{
+    var isSpecificMonthMenuRunning = true;
+
+    while (isSpecificMonthMenuRunning)
+    {
+        // Step 1: Fetch available years
+        List<string> years = new();
+        using (SqliteConnection connection = new(connectionString))
+        using (SqliteCommand command = connection.CreateCommand())
+        {
+            connection.Open();
+            command.CommandText = @"
+                SELECT DISTINCT substr(Date, 7, 2) AS Year
+                FROM records
+                ORDER BY Year ASC";
+
+            using (SqliteDataReader reader = command.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    years.Add("20" + reader.GetString(0)); // Convert 'yy' to 'yyyy'
+                }
+            }
+        }
+
+        if (years.Count == 0)
+        {
+            Console.WriteLine("No records found in the database.");
+            return;
+        }
+
+        // Step 2: Prompt user to select a year
+        var selectedYear = AnsiConsole.Prompt(
+            new SelectionPrompt<string>()
+                .Title("Choose a Year:")
+                .AddChoices(years.Concat(new[] { "Back" })) // Add "Back" option
+        );
+
+        if (selectedYear == "Back")
+        {
+            isSpecificMonthMenuRunning = false;
+            return;
+        }
+
+        // Step 3: Fetch monthly entry counts for the selected year
+        List<(string Month, int EntryCount)> months = new();
+        using (SqliteConnection connection = new(connectionString))
+        using (SqliteCommand command = connection.CreateCommand())
+        {
+            connection.Open();
+            command.CommandText = @"
+                SELECT substr(Date, 4, 2) AS Month, COUNT(*) AS EntryCount
+                FROM records
+                WHERE substr(Date, 7, 2) = @Year
+                GROUP BY Month
+                ORDER BY Month ASC";
+
+            command.Parameters.AddWithValue("@Year", selectedYear.Substring(2, 2)); // Extract 'yy' from 'yyyy'
+
+            using (SqliteDataReader reader = command.ExecuteReader())
+            {
+                // Initialize all months with 0 entries
+                for (int i = 1; i <= 12; i++)
+                {
+                    months.Add((i.ToString("D2"), 0));
+                }
+
+                // Update entry counts for months with data
+                while (reader.Read())
+                {
+                    string month = reader.GetString(0);
+                    int entryCount = reader.GetInt32(1);
+                    int index = months.FindIndex(m => m.Month == month);
+                    if (index != -1)
+                    {
+                        months[index] = (month, entryCount);
+                    }
+                }
+            }
+        }
+
+        // Step 4: Prompt user to select a month
+        var selectedMonth = AnsiConsole.Prompt(
+            new SelectionPrompt<string>()
+                .Title($"Choose a Month for {selectedYear}:")
+                .AddChoices(months.Select(m => $"{m.Month} (Entries: {m.EntryCount})").Concat(new[] { "Back" }))
+        );
+
+        if (selectedMonth == "Back")
+        {
+            continue;
+        }
+
+        // Extract the selected month (e.g., "01" from "01 (Entries: 0)")
+        string monthNumber = selectedMonth.Substring(0, 2);
+
+        // Step 5: Fetch and display entries for the selected year and month
+        List<(string Date, string HabitName, int Quantity, string MeasurementUnit)> entries = new();
+        using (SqliteConnection connection = new(connectionString))
+        using (SqliteCommand command = connection.CreateCommand())
+        {
+            connection.Open();
+            command.CommandText = @"
+                SELECT records.Date, habits.Name, records.Quantity, habits.MeasurementUnit
+                FROM records
+                INNER JOIN habits ON records.HabitId = habits.Id
+                WHERE substr(records.Date, 7, 2) = @Year AND substr(records.Date, 4, 2) = @Month
+                ORDER BY records.Date ASC";
+
+            command.Parameters.AddWithValue("@Year", selectedYear.Substring(2, 2)); // Extract 'yy' from 'yyyy'
+            command.Parameters.AddWithValue("@Month", monthNumber);
+
+            using (SqliteDataReader reader = command.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    entries.Add((
+                        reader.GetString(0), // Date
+                        reader.GetString(1), // HabitName
+                        reader.GetInt32(2),  // Quantity
+                        reader.GetString(3)  // MeasurementUnit
+                    ));
+                }
+            }
+        }
+
+        Console.Clear();
+        if (entries.Count > 0)
+        {
+            var table = new Table();
+            table.AddColumn("Date");
+            table.AddColumn("Habit");
+            table.AddColumn("Quantity");
+            table.AddColumn("Measurement Unit");
+
+            foreach (var entry in entries)
+            {
+                table.AddRow(entry.Date, entry.HabitName, entry.Quantity.ToString(), entry.MeasurementUnit);
+            }
+
+            AnsiConsole.Write(new Markup($"[bold yellow]Entries for {selectedYear}-{monthNumber}[/]\n"));
+            AnsiConsole.Write(table);
+        }
+        else
+        {
+            Console.WriteLine($"No entries found for {selectedYear}-{monthNumber}.");
+        }
+    }
+}
+
+
+
+
 
 void ShowSpecificHabit()
 {
@@ -177,7 +332,6 @@ void ShowSpecificHabit()
         {
             Console.WriteLine($"No entries found for the habit: {habitChoice}.");
         }
-        // name of list = All you wanna know about {chosen habit}
     }
 }
 
