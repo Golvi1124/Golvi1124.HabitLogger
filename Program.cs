@@ -104,7 +104,7 @@ void SearchMenu()
 
 void ShowChart()
 {
-    List<(string HabitName, int TotalQuantity)> habitChartData = new();
+    List<(string HabitName, int LogCount)> habitChartData = new();
 
     using (SqliteConnection connection = new(connectionString))
     using (SqliteCommand command = connection.CreateCommand())
@@ -113,7 +113,7 @@ void ShowChart()
 
         // Query for total quantity
         command.CommandText = @"
-            SELECT habits.Name, SUM(records.Quantity) AS TotalQuantity
+            SELECT habits.Name, COUNT(records.Id) AS LogCount
             FROM records
             INNER JOIN habits ON records.HabitId = habits.Id
             GROUP BY habits.Id";
@@ -131,58 +131,17 @@ void ShowChart()
 
     if (habitChartData.Count > 0)
     {
-        AnsiConsole.Write(new Markup("[bold yellow]Breakdown Chart of Habits by Amount[/]\n"));
-        AnsiConsole.Write(new BreakdownChart()
-            .FullSize()
-            .ShowPercentage()
-            .AddItems(habitChartData, (habit) => new BreakdownChartItem(
-                habit.HabitName, habit.TotalQuantity, Color.Green)));
+        AnsiConsole.Write(new BarChart()
+            .Width(60)
+            .Label("[bold yellow]Habit Chart by times done[/]\n")
+            .AddItems(habitChartData, (habit) => new BarChartItem(
+                habit.HabitName, habit.LogCount, Color.Green)));
+
     }
     else
     {
         Console.WriteLine("No data available to display chart.");
     }
-    /*
-
-
-
-
-
-
-  List<(string Name, double Value)> habitData = GetHabitsFromDatabase();
-
-    var chart = new BreakdownChart();
-
-foreach (var habit in habitData)
-{
-    chart.AddItem(habit.Name, habit.Value);
-}
-
-AnsiConsole.Write(chart);
-
-    ---------------------------
-    var random = new Random();
-var colors = new[] { Color.Red, Color.Green, Color.Blue, Color.Yellow, Color.Purple };
-
-foreach (var habit in habitData)
-{
-    var color = colors[random.Next(colors.Length)];
-    chart.AddItem(habit.Name, habit.Value, color);
-}
-
-
-     * 
-     * 
-     // Show percentage signs after the values in the chart.
-AnsiConsole.Write(new BreakdownChart()
-    .ShowPercentage()
-    .AddItem("SCSS", 80, Color.Red)
-    .AddItem("HTML", 28.3, Color.Blue)
-    .AddItem("C#", 22.6, Color.Green)
-    .AddItem("JavaScript", 6, Color.Yellow)
-    .AddItem("Ruby", 6, Color.LightGreen)
-    .AddItem("Shell", 0.1, Color.Aqua));
-     */
 }
 
 void ShowAverage()
