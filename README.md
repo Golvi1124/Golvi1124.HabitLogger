@@ -4,7 +4,7 @@
 Using guidelines from The C# Academy course - [Link to page](https://thecsharpacademy.com/project/12/habit-logger)
 
 ### Requirements:
-- [ ] Create a console application where you’ll log occurrences of a habit.
+- [x] Create a console application where you’ll log occurrences of a habit.
 - [x] This habit can't be tracked by time (ex. hours of sleep), only by quantity (ex. number of water glasses a day)
 - [x] Users need to be able to input the date of the occurrence of the habit
 - [x] The application should store and retrieve data from a real database
@@ -14,7 +14,7 @@ Using guidelines from The C# Academy course - [Link to page](https://thecsharpac
 - [ ] You should handle all possible errors so that the application never crashes.
 - [x] You can only interact with the database using ADO.NET. You can’t use mappers such as Entity Framework or Dapper.
 - [ ] Follow the DRY Principle, and avoid code repetition.
-- [ ] Your project needs to contain a Read Me file where you'll explain how your app works. Here's a nice example: https://github.com/thags/ConsoleTimeLogger
+- [x] Your project needs to contain a Read Me file where you'll explain how your app works. Here's a nice example: https://github.com/thags/ConsoleTimeLogger
 
 ### Challanges:
 - [ ] If you haven't, try using parameterized queries to make your application more secure. https://reintech.io/blog/mastering-parameterized-queries-ado-net
