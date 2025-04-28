@@ -68,7 +68,7 @@ void SearchMenu()
     {
         var searchChoice = AnsiConsole.Prompt(
             new SelectionPrompt<string>()
-                .Title("Choose a Search operation:")
+                .Title("\nChoose a Search operation:")
                 .AddChoices(
                     "Chart of Habits by Amount",
                     "Top 3 Habits",
@@ -212,42 +212,96 @@ void CreateDatabase()
     }
 }
 
-
-
-
 void ShowTopHabits()
 {
-    // Fetch records from the database
-    List<RecordWithHabit> records = GetRecords();
+    List<(string HabitName, int TotalQuantity)> topByQuantity = new();
+    List<(string HabitName, int LogCount)> topByCount = new();
 
-    // Get top 3 habits based on the quantity
-    var topHabits = records
-                        .GroupBy(r => r.HabitName)  // Group records by HabitName
-                        .Select(g => new
-                        {
-                            HabitName = g.Key,
-                            TotalQuantity = g.Sum(r => r.Quantity)  // Sum the quantities for each habit
-                        })
-                        .OrderByDescending(h => h.TotalQuantity)
-                        .Take(3)
-                        .ToList();
-
-    // Display the top 3 habits in a table
-    var table = new Table();
-    table.AddColumn("Rank");
-    table.AddColumn("Habit Name");
-    table.AddColumn("Total Quantity");
-
-    // Add each of the top 3 habits to the table
-    int rank = 1;
-    foreach (var habit in topHabits)
+    using (SqliteConnection connection = new(connectionString))
+    using (SqliteCommand command = connection.CreateCommand())
     {
-        table.AddRow(rank.ToString(), habit.HabitName, habit.TotalQuantity.ToString());
-        rank++;
+        connection.Open();
+
+        // Query for top 3 habits by total quantity
+        command.CommandText = @"
+            SELECT habits.Name, SUM(records.Quantity) AS TotalQuantity
+            FROM records
+            INNER JOIN habits ON records.HabitId = habits.Id
+            GROUP BY habits.Id
+            ORDER BY TotalQuantity DESC
+            LIMIT 3";
+
+        using (SqliteDataReader reader = command.ExecuteReader())
+        {
+            while (reader.Read())
+            {
+                topByQuantity.Add((reader.GetString(0), reader.GetInt32(1)));
+            }
+        }
+
+        // Query for top 3 habits by log count
+        command.CommandText = @"
+            SELECT habits.Name, COUNT(records.Id) AS LogCount
+            FROM records
+            INNER JOIN habits ON records.HabitId = habits.Id
+            GROUP BY habits.Id
+            ORDER BY LogCount DESC
+            LIMIT 3";
+
+        using (SqliteDataReader reader = command.ExecuteReader())
+        {
+            while (reader.Read())
+            {
+                topByCount.Add((reader.GetString(0), reader.GetInt32(1)));
+            }
+        }
+    }
+    Console.Clear();
+    // Display top 3 by total quantity
+    if (topByQuantity.Count > 0)
+    {
+        var quantityTable = new Table();
+        quantityTable.AddColumn("Rank");
+        quantityTable.AddColumn("Habit");
+        quantityTable.AddColumn("Total Quantity");
+
+        for (int i = 0; i < topByQuantity.Count; i++)
+        {
+            quantityTable.AddRow((i + 1).ToString(), topByQuantity[i].HabitName, topByQuantity[i].TotalQuantity.ToString());
+        }
+
+        AnsiConsole.Write(new Markup("[bold yellow]Top 3 Habits by Total Quantity[/]\n"));
+        AnsiConsole.Write(quantityTable);
+    }
+    else
+    {
+        Console.WriteLine("No data available to display top habits by quantity.");
     }
 
-    AnsiConsole.Write(table);  // Write the table to the console
+    // Display top 3 by log count
+    if (topByCount.Count > 0)
+    {
+        var countTable = new Table();
+        countTable.AddColumn("Rank");
+        countTable.AddColumn("Habit");
+        countTable.AddColumn("Log Count");
+
+        for (int i = 0; i < topByCount.Count; i++)
+        {
+            countTable.AddRow((i + 1).ToString(), topByCount[i].HabitName, topByCount[i].LogCount.ToString());
+        }
+
+        AnsiConsole.Write(new Markup("\n[bold yellow]Top 3 Habits by Log Count[/]\n"));
+        AnsiConsole.Write(countTable);
+    }
+    else
+    {
+        Console.WriteLine("No data available to display top habits by log count.");
+    }
 }
+
+
+
 
 
 void AddRandomData()
