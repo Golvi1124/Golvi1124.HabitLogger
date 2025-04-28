@@ -70,7 +70,7 @@ void SearchMenu()
             new SelectionPrompt<string>()
                 .Title("\nChoose a Search operation:")
                 .AddChoices(
-                    "Breakdown Chart of Habits by Amount",
+                    "Chart of All Habits",
                     "Top 3 Habits",
                     "Average Habit Quantity",
                     "See Entries for Specific Habit",
@@ -79,8 +79,8 @@ void SearchMenu()
         );
         switch (searchChoice)
         {
-            case "Chart of Habits by Amount":
-                //ShowChart();
+            case "Chart of All Habits":
+                ShowChart();
                 break;
             case "Top 3 Habits":
                 ShowTopHabits();
@@ -91,7 +91,7 @@ void SearchMenu()
             case "See Entries for Specific Habit":
                 // ShowSpecificHabit();
                 break;
-            case "See Entries for Specific Month":
+            case "See Entries for Specific Month": // menu where start with year
                 // ShowSpecificMonth();
                 break;
             case "Back":
@@ -100,6 +100,89 @@ void SearchMenu()
 
         }
     }
+}
+
+void ShowChart()
+{
+    List<(string HabitName, int TotalQuantity)> habitChartData = new();
+
+    using (SqliteConnection connection = new(connectionString))
+    using (SqliteCommand command = connection.CreateCommand())
+    {
+        connection.Open();
+
+        // Query for total quantity
+        command.CommandText = @"
+            SELECT habits.Name, SUM(records.Quantity) AS TotalQuantity
+            FROM records
+            INNER JOIN habits ON records.HabitId = habits.Id
+            GROUP BY habits.Id";
+
+        using (SqliteDataReader reader = command.ExecuteReader())
+        {
+            while (reader.Read())
+            {
+                habitChartData.Add((reader.GetString(0), reader.GetInt32(1)));
+            }
+        }
+    }
+
+    Console.Clear();
+
+    if (habitChartData.Count > 0)
+    {
+        AnsiConsole.Write(new Markup("[bold yellow]Breakdown Chart of Habits by Amount[/]\n"));
+        AnsiConsole.Write(new BreakdownChart()
+            .FullSize()
+            .ShowPercentage()
+            .AddItems(habitChartData, (habit) => new BreakdownChartItem(
+                habit.HabitName, habit.TotalQuantity, Color.Green)));
+    }
+    else
+    {
+        Console.WriteLine("No data available to display chart.");
+    }
+    /*
+
+
+
+
+
+
+  List<(string Name, double Value)> habitData = GetHabitsFromDatabase();
+
+    var chart = new BreakdownChart();
+
+foreach (var habit in habitData)
+{
+    chart.AddItem(habit.Name, habit.Value);
+}
+
+AnsiConsole.Write(chart);
+
+    ---------------------------
+    var random = new Random();
+var colors = new[] { Color.Red, Color.Green, Color.Blue, Color.Yellow, Color.Purple };
+
+foreach (var habit in habitData)
+{
+    var color = colors[random.Next(colors.Length)];
+    chart.AddItem(habit.Name, habit.Value, color);
+}
+
+
+     * 
+     * 
+     // Show percentage signs after the values in the chart.
+AnsiConsole.Write(new BreakdownChart()
+    .ShowPercentage()
+    .AddItem("SCSS", 80, Color.Red)
+    .AddItem("HTML", 28.3, Color.Blue)
+    .AddItem("C#", 22.6, Color.Green)
+    .AddItem("JavaScript", 6, Color.Yellow)
+    .AddItem("Ruby", 6, Color.LightGreen)
+    .AddItem("Shell", 0.1, Color.Aqua));
+     */
 }
 
 void ShowAverage()
