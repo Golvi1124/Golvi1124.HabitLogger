@@ -482,3 +482,7 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+/Methods/RecordControls.cs
+/Methods/Config.cs
+/Methods/DBControls.cs
+/Methods/Helpers.cs
