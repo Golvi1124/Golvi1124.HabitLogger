@@ -38,14 +38,14 @@ The application also allows the user to insert, delete, update and view their lo
 - Error Handling: Improved input validation and error handling to prevent crashes.
 - DRY Principle: Refactored repetitive code into reusable methods (e.g., displaying tables).
 - File-Scoped Namespaces: Reduced nesting for cleaner code.
-- Descriptive Command Names: Improved readability by using descriptive variable names for database commands.
-
+- Descriptive Command Names: Improved readability by using descriptive variable names for database commands.  
+> Before:   `command.ExecuteNonQuery();`  = generic, but can be confusing if you have multiple commands  
+> After:    `deleteCmd.ExecuteNonQuery();` = more descriptive (better readability)  
 - Flexible Data Structures: Replaced arrays with lists for better flexibility. + using same structure and/or improve readability.   
 > Before:   `using (var connection = new SqliteConnection(connectionString)))`  
 > After:    `using (SqliteConnection connection = new(connectionString))` 
 - Seperated Methods: Organized code into separate files for better readability and maintainability.  
-> Before:   `command.ExecuteNonQuery();`  = generic, but can be confusing if you have multiple commands  
-> After:    `deleteCmd.ExecuteNonQuery();` = more descriptive (better readability)  
+
 ---
 ## Project Structure
 The project is organized into multiple files for better readability and maintainability:  
