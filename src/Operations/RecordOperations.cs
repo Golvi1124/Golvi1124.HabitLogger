@@ -11,21 +11,31 @@ public class RecordOperations
     private readonly HelperMethods? _helper; // Changed to readonly and renamed for clarity
     private readonly string? _connectionString;
 
-      public RecordOperations()
-       {
-           _helper = new HelperMethods(); // Ensure helper is instantiated
-       }
-   
+    public RecordOperations()
+    {
+        _helper = new HelperMethods();
+        _connectionString = DatabaseConfig.ConnectionString; // Use the same source as DatabaseOperations
+    }
+
+
 
     public List<RecordWithHabit> GetRecords()
     {
+        if (_helper == null)
+        {
+            throw new InvalidOperationException("HelperMethods instance is not initialized.");
+        }
         return _helper.GetRecords(); // Expose a public method to access records
     }
 
 
 
+
     public void ViewRecords(List<RecordWithHabit> records)
     {
+        Console.Clear();
+        AnsiConsole.MarkupLine("[bold yellow]Records Table[/]"); // Display table name in bold yellow
+
         var table = new Table();
 
         // Add columns to the table
@@ -55,9 +65,19 @@ public class RecordOperations
 
     public void AddRecord()
     {
+        if (_helper == null)
+        {
+            throw new InvalidOperationException("HelperMethods instance is not initialized.");
+        }
+
         string date = _helper.GetDate("\nEnter the date (format - dd-mm-yy) or insert 0 to Go Back to Main Menu:\n");
 
-        _helper.GetHabits();
+        var habits = _helper.GetHabits();
+        _helper.DisplayHabitsTable(habits); // Reuse the new method
+
+
+        AnsiConsole.MarkupLine("\n[bold cyan]Choose a Habit:[/]"); // Start on a new line and change color to bold cyan
+
         int habitId = _helper.GetNumber("\nPlease enter the ID of the habit you want to add a record for.");
 
         int quantity = _helper.GetNumber("\nPlease enter number of habit's amount (no decimals or negatives allowed) or enter 0 to go back to Main Menu.");
@@ -74,7 +94,13 @@ public class RecordOperations
 
     public void UpdateRecord()
     {
+        if (_helper == null)
+        {
+            throw new InvalidOperationException("HelperMethods instance is not initialized.");
+        }
+
         _helper.GetRecords();
+
 
         int id = _helper.GetNumber("\nPlease enter the ID of the record you want to update.");
 
@@ -117,6 +143,11 @@ public class RecordOperations
 
     public void DeleteRecord()
     {
+        if (_helper == null)
+        {
+            throw new InvalidOperationException("HelperMethods instance is not initialized.");
+        }
+
         _helper.GetRecords(); // show the records to the user so they can select which one to delete
 
         int id = _helper.GetNumber("\nPlease enter the ID of the record you want to delete.");

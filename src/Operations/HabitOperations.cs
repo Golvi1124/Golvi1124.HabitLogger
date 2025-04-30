@@ -18,6 +18,9 @@ public class HabitOperations
 
     public void ViewHabits(List<Habit> habits) // for visualizing the habits in a table
     {
+        Console.Clear();
+        AnsiConsole.MarkupLine("[bold yellow]Habits Table[/]"); // Display table name in bold yellow
+
         var table = new Table(); // Spectre Console table 
         table.AddColumn("Id"); // table Class from Spectre Console
         table.AddColumn("Name");
@@ -54,8 +57,11 @@ public class HabitOperations
 
     public void UpdateHabit()
     {
-        
-        helper.GetHabits();
+
+        var habits = helper.GetHabits();
+        helper.DisplayHabitsTable(habits); // Reuse the new method
+
+        helper.GetRecords();
         var id = helper.GetNumber("Please type the id of the habit you want to update.");
 
         string name = "";
@@ -105,7 +111,10 @@ public class HabitOperations
 
     public void DeleteHabit()
     {
-        helper.GetHabits();
+        var habits = helper.GetHabits();
+        helper.DisplayHabitsTable(habits); // Reuse the new method
+
+        helper.GetRecords();
 
         var id = helper.GetNumber("Please type the id of the habit you want to delete.");
         using (SqliteConnection connection = new(_connectionString))

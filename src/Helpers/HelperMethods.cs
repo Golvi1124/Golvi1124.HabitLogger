@@ -2,6 +2,7 @@
 using Microsoft.Data.Sqlite;
 using Golvi1124.HabitLogger.src.Database;
 using Golvi1124.HabitLogger.src.Models;
+using Spectre.Console;
 
 
 namespace Golvi1124.HabitLogger.src.Helpers;
@@ -213,5 +214,27 @@ public class HelperMethods
         return output;
 
     }
+
+    public void DisplayHabitsTable(List<Habit> habits)
+    {
+        if (habits.Count == 0)
+        {
+            Console.WriteLine("No habits found. Please add habits first.");
+            return;
+        }
+
+        var table = new Table();
+        table.AddColumn("ID");
+        table.AddColumn("Name");
+        table.AddColumn("Unit of Measurement");
+
+        foreach (var habit in habits)
+        {
+            table.AddRow(habit.Id.ToString(), habit.Name, habit.UnitOfMeasurement);
+        }
+
+        AnsiConsole.Write(table);
+    }
+
 
 }
