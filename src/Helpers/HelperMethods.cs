@@ -4,8 +4,8 @@ using Golvi1124.HabitLogger.src.Database;
 using Golvi1124.HabitLogger.src.Models;
 using Spectre.Console;
 
-
 namespace Golvi1124.HabitLogger.src.Helpers;
+
 public class HelperMethods
 {
     private readonly string _connectionString;
@@ -65,13 +65,11 @@ public class HelperMethods
                 {
                     Console.WriteLine("No records found.");
                 }
-
             }
         }
-        //ViewRecords(records);
-        // Replace ViewRecords with a Console.WriteLine or implement ViewRecords
         return records;
     }
+
 
     public List<Habit> GetHabits() // Update the GetHabits method to return a List<Habit> instead of void.
     {
@@ -111,7 +109,6 @@ public class HelperMethods
                 }
             }
         }
-
         // Return the list of habits.
         return habits;
     }
@@ -133,7 +130,7 @@ public class HelperMethods
     public List<string> GenerateRandomDates(int count)
     {
         DateTime startDate = new DateTime(2023, 1, 1);
-        DateTime endDate = DateTime.Now; // current date...check if this works
+        DateTime endDate = DateTime.Now; // current date
         TimeSpan timeSpan = endDate - startDate;
 
         List<string> randomDateStrings = new(count);
@@ -212,7 +209,6 @@ public class HelperMethods
             numberInput = Console.ReadLine();
         }
         return output;
-
     }
 
     public void DisplayHabitsTable(List<Habit> habits)
@@ -235,6 +231,4 @@ public class HelperMethods
 
         AnsiConsole.Write(table);
     }
-
-
 }

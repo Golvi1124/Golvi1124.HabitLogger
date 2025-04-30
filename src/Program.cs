@@ -63,7 +63,7 @@ public static class Program
         {
             var usersChoice = AnsiConsole.Prompt(
                 new SelectionPrompt<string>()
-                    .Title("\nWhat do you want to do?")
+                    .Title("\n[bold cyan]What do you want to do?[/]")
                     .AddChoices(
                         "Habit Options",
                         "Record Options",

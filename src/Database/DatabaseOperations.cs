@@ -2,8 +2,8 @@
 using Spectre.Console;
 using Golvi1124.HabitLogger.src.Helpers;
 
-
 namespace Golvi1124.HabitLogger.src.Database;
+
 public class DatabaseOperations
 {
 
@@ -27,8 +27,10 @@ public class DatabaseOperations
         }
     }
 
+
     public void WipeData()
     {
+        Console.Clear();
         using (SqliteConnection connection = new(_connectionString))
         using (SqliteCommand wipeCmd = connection.CreateCommand())
         {
@@ -38,6 +40,7 @@ public class DatabaseOperations
         }
         Console.WriteLine("All data wiped and IDs reset.");
     }
+
 
     public void AddRandomData()
     {
@@ -71,6 +74,8 @@ public class DatabaseOperations
                 command.ExecuteNonQuery();
             }
         }
+        Console.Clear();
+        Console.WriteLine($"{numberOfRecords} random records added.");
     }
 
     public void SeedHabits()

@@ -27,7 +27,7 @@ public class MenuOptions
         {
             var habitChoice = AnsiConsole.Prompt(
                 new SelectionPrompt<string>()
-                    .Title("Choose a Habit operation:")
+                    .Title("\n[bold cyan]Choose a Habit operation:[/]")
                     .AddChoices(
                         "View Habits",
                         "Add Habit",
@@ -63,13 +63,11 @@ public class MenuOptions
     {
         var isRecordMenuRunning = true;
 
-
-
         while (isRecordMenuRunning)
         {
             var recordChoice = AnsiConsole.Prompt(
                 new SelectionPrompt<string>()
-                    .Title("Choose a Record operation:")
+                    .Title("\n[bold cyan]Choose a Record operation:[/]")
                     .AddChoices(
                     "View Records",
                     "Add Record",
@@ -108,7 +106,7 @@ public class MenuOptions
         {
             var searchChoice = AnsiConsole.Prompt(
                 new SelectionPrompt<string>()
-                    .Title("\nChoose a Search operation:")
+                    .Title("\n[bold cyan]Choose a Search operation:[/]")
                     .AddChoices(
                         "Chart of All Habits",
                         "Top 3 Habits",

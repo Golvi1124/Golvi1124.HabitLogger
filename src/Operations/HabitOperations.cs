@@ -35,6 +35,7 @@ public class HabitOperations
 
     public void AddHabit()
     {
+        Console.Clear();
         var name = AnsiConsole.Ask<string>("What's the habit's name?");
         while (string.IsNullOrWhiteSpace(name)) //added check for whitespace 
         {
@@ -53,11 +54,14 @@ public class HabitOperations
             insertCmd.CommandText = $"INSERT INTO habits (Name, MeasurementUnit) VALUES ('{name}', '{unit}')";
             insertCmd.ExecuteNonQuery();
         }
+
+        Console.Clear();
+        Console.WriteLine("Habit added successfully.");
     }
 
     public void UpdateHabit()
     {
-
+        Console.Clear();
         var habits = helper.GetHabits();
         helper.DisplayHabitsTable(habits); // Reuse the new method
 
@@ -107,10 +111,13 @@ public class HabitOperations
             updateCmd.CommandText = query;
             updateCmd.ExecuteNonQuery();
         }
+        Console.Clear();
+        Console.WriteLine("Habit updated successfully.");
     }
 
     public void DeleteHabit()
     {
+        Console.Clear();
         var habits = helper.GetHabits();
         helper.DisplayHabitsTable(habits); // Reuse the new method
 
@@ -132,6 +139,7 @@ public class HabitOperations
                 Console.WriteLine("Habit not found.");
             }
         }
+        Console.Clear();
+        Console.WriteLine("Habit deleted successfully.");
     }
-
 }

@@ -7,6 +7,5 @@
     public record Habit(int Id, string Name, string UnitOfMeasurement);
 
 /* Nesting the RecordWithHabit type inside a class would have restricted its visibility, even with the public modifier. 
- * By moving it out of the class and ensuring it is directly within the namespace, 
- * you made it accessible across your project.
+ By moving it out of the class and ensuring it is directly within the namespace, you made it accessible across your project.
 */

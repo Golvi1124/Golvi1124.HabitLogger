@@ -17,8 +17,6 @@ public class RecordOperations
         _connectionString = DatabaseConfig.ConnectionString; // Use the same source as DatabaseOperations
     }
 
-
-
     public List<RecordWithHabit> GetRecords()
     {
         if (_helper == null)
@@ -27,9 +25,6 @@ public class RecordOperations
         }
         return _helper.GetRecords(); // Expose a public method to access records
     }
-
-
-
 
     public void ViewRecords(List<RecordWithHabit> records)
     {
@@ -56,15 +51,14 @@ public class RecordOperations
                 record.MeasurementUnit
             );
         }
-
         // Render the table
         AnsiConsole.Write(table);
     }
 
 
-
     public void AddRecord()
     {
+        Console.Clear();
         if (_helper == null)
         {
             throw new InvalidOperationException("HelperMethods instance is not initialized.");
@@ -74,9 +68,6 @@ public class RecordOperations
 
         var habits = _helper.GetHabits();
         _helper.DisplayHabitsTable(habits); // Reuse the new method
-
-
-        AnsiConsole.MarkupLine("\n[bold cyan]Choose a Habit:[/]"); // Start on a new line and change color to bold cyan
 
         int habitId = _helper.GetNumber("\nPlease enter the ID of the habit you want to add a record for.");
 
@@ -90,17 +81,26 @@ public class RecordOperations
             insertCmd.CommandText = $"INSERT INTO records(date, quantity, habitId) VALUES('{date}', {quantity}, {habitId})";
             insertCmd.ExecuteNonQuery();
         }
+        Console.Clear();
+        Console.WriteLine("Record added successfully.");
     }
 
     public void UpdateRecord()
     {
+        Console.Clear();
         if (_helper == null)
         {
             throw new InvalidOperationException("HelperMethods instance is not initialized.");
         }
 
-        _helper.GetRecords();
-
+        // Fetch and display the records
+        var records = _helper.GetRecords();
+        if (records.Count == 0)
+        {
+            Console.WriteLine("No records found. Please add records first.");
+            return;
+        }
+        ViewRecords(records); // Use the ViewRecords method to display the records
 
         int id = _helper.GetNumber("\nPlease enter the ID of the record you want to update.");
 
@@ -139,16 +139,25 @@ public class RecordOperations
             updateCmd.CommandText = query; // set the command text to the query
             updateCmd.ExecuteNonQuery();
         }
+        Console.Clear();
+        Console.WriteLine("Record updated successfully.");
     }
 
     public void DeleteRecord()
     {
+        Console.Clear();
         if (_helper == null)
         {
             throw new InvalidOperationException("HelperMethods instance is not initialized.");
         }
 
-        _helper.GetRecords(); // show the records to the user so they can select which one to delete
+        var records = _helper.GetRecords();
+        if (records.Count == 0)
+        {
+            Console.WriteLine("No records found. Please add records first.");
+            return;
+        }
+        ViewRecords(records);
 
         int id = _helper.GetNumber("\nPlease enter the ID of the record you want to delete.");
 
@@ -167,6 +176,7 @@ public class RecordOperations
                 Console.WriteLine("Record not found.");
             }
         }
+        Console.Clear();
+        Console.WriteLine("Record deleted successfully.");
     }
-
 }
