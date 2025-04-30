@@ -8,38 +8,59 @@ using Golvi1124.HabitLogger.src.Models;
 namespace Golvi1124.HabitLogger.src.Operations;
 public class RecordOperations
 {
-    HelperMethods helper = new();
-    private readonly string _connectionString;
+    private readonly HelperMethods? _helper; // Changed to readonly and renamed for clarity
+    private readonly string? _connectionString;
 
-    public RecordOperations()
+      public RecordOperations()
+       {
+           _helper = new HelperMethods(); // Ensure helper is instantiated
+       }
+   
+
+    public List<RecordWithHabit> GetRecords()
     {
-        _connectionString = DatabaseConfig.ConnectionString;
+        return _helper.GetRecords(); // Expose a public method to access records
     }
 
-    public void ViewRecords(List<RecordWithHabit> records) // for visualizing the records in a table
-    {
-        var table = new Table(); // Spectre Console table 
-        table.AddColumn("Id"); // table Class from Spectre Console
-        table.AddColumn("Date");
-        table.AddColumn("Amount");
-        table.AddColumn("Habit");
 
+
+    public void ViewRecords(List<RecordWithHabit> records)
+    {
+        var table = new Table();
+
+        // Add columns to the table
+        table.AddColumn("ID");
+        table.AddColumn("Date");
+        table.AddColumn("Habit Name");
+        table.AddColumn("Quantity");
+        table.AddColumn("Measurement Unit");
+
+        // Add rows to the table
         foreach (var record in records)
         {
-            table.AddRow(record.Id.ToString(), record.Date.ToString("D"), $"{record.Quantity} {record.MeasurementUnit}", record.HabitName.ToString());
+            table.AddRow(
+                record.Id.ToString(),
+                record.Date.ToString("yyyy-MM-dd"),
+                record.HabitName,
+                record.Quantity.ToString(),
+                record.MeasurementUnit
+            );
         }
 
-        AnsiConsole.Write(table); // write the table to the console
+        // Render the table
+        AnsiConsole.Write(table);
     }
+
+
 
     public void AddRecord()
     {
-        string date = helper.GetDate("\nEnter the date (format - dd-mm-yy) or insert 0 to Go Back to Main Menu:\n");
+        string date = _helper.GetDate("\nEnter the date (format - dd-mm-yy) or insert 0 to Go Back to Main Menu:\n");
 
-        helper.GetHabits();
-        int habitId = helper.GetNumber("\nPlease enter the ID of the habit you want to add a record for.");
+        _helper.GetHabits();
+        int habitId = _helper.GetNumber("\nPlease enter the ID of the habit you want to add a record for.");
 
-        int quantity = helper.GetNumber("\nPlease enter number of habit's amount (no decimals or negatives allowed) or enter 0 to go back to Main Menu.");
+        int quantity = _helper.GetNumber("\nPlease enter number of habit's amount (no decimals or negatives allowed) or enter 0 to go back to Main Menu.");
 
         Console.Clear();
         using (SqliteConnection connection = new(_connectionString))
@@ -53,22 +74,22 @@ public class RecordOperations
 
     public void UpdateRecord()
     {
-        helper.GetRecords();
+        _helper.GetRecords();
 
-        int id = helper.GetNumber("\nPlease enter the ID of the record you want to update.");
+        int id = _helper.GetNumber("\nPlease enter the ID of the record you want to update.");
 
         bool updateDate = AnsiConsole.Confirm("Do you want to update the date?");
         string date = "";
         if (updateDate)
         {
-            date = helper.GetDate("\nEnter the new date (format - dd-mm-yy) or insert 0 to Go Back to Main Menu:\n");
+            date = _helper.GetDate("\nEnter the new date (format - dd-mm-yy) or insert 0 to Go Back to Main Menu:\n");
         }
 
         bool updateQuantity = AnsiConsole.Confirm("Do you want to update the quantity?");
         int quantity = 0;
         if (updateQuantity)
         {
-            quantity = helper.GetNumber("\nPlease enter the new quantity (no decimals or negatives allowed) or enter 0 to go back to Main Menu.");
+            quantity = _helper.GetNumber("\nPlease enter the new quantity (no decimals or negatives allowed) or enter 0 to go back to Main Menu.");
         }
 
         string query; // querry for each combination of updates
@@ -96,9 +117,9 @@ public class RecordOperations
 
     public void DeleteRecord()
     {
-        helper.GetRecords(); // show the records to the user so they can select which one to delete
+        _helper.GetRecords(); // show the records to the user so they can select which one to delete
 
-        int id = helper.GetNumber("\nPlease enter the ID of the record you want to delete.");
+        int id = _helper.GetNumber("\nPlease enter the ID of the record you want to delete.");
 
         using (SqliteConnection connection = new(_connectionString))
         using (SqliteCommand deleteCmd = connection.CreateCommand())

@@ -14,16 +14,16 @@ public class HelperMethods
         _connectionString = DatabaseConfig.ConnectionString;
     }
 
-    public void GetRecords()
+    public List<RecordWithHabit> GetRecords()
     {
-        List<RecordWithHabit> records = new(); // Representing rows in db
+        var records = new List<RecordWithHabit>();
 
         using (SqliteConnection connection = new(_connectionString))
         using (SqliteCommand getCmd = connection.CreateCommand())
         {
             connection.Open();
             getCmd.CommandText = @"
-    SELECT records.Id, records.Date, records.Quantity, records.HabitId, habits.Name AS HabitName, habits.MeasurementUnit
+    SELECT records.Id, records.Date, habits.Name AS HabitName, records.Quantity, habits.MeasurementUnit
     FROM records
     INNER JOIN habits ON records.HabitId = habits.Id";
 
@@ -40,15 +40,19 @@ public class HelperMethods
                         to prevent the app from crashing in case the operation against the database goes wrong.*/
                         try
                         {
-                            records.Add(
-                            new RecordWithHabit(
+                            // Parse the date string explicitly
+                            string dateString = reader.GetString(1); // Read the date as a string
+                            DateTime date = DateTime.ParseExact(dateString, "dd-MM-yy", CultureInfo.InvariantCulture);
+
+
+                            // Update the RecordWithHabit instantiation to use the constructor with parameters
+                            records.Add(new RecordWithHabit(
                                 reader.GetInt32(0), // Id
-                                DateTime.ParseExact(reader.GetString(1), "dd-MM-yy", CultureInfo.InvariantCulture),
-                                reader.GetInt32(2), // Quantity
-                                reader.GetString(4), // HabitName
-                                reader.GetString(5) // MeasurementUnit
-                                )
-                             );
+                                date, // Parsed Date
+                                reader.GetString(2), // HabitName
+                                reader.GetInt32(3), // Quantity
+                                reader.GetString(4)  // MeasurementUnit
+                             ));
                         }
                         catch (FormatException ex)
                         {
@@ -65,10 +69,7 @@ public class HelperMethods
         }
         //ViewRecords(records);
         // Replace ViewRecords with a Console.WriteLine or implement ViewRecords
-        foreach (var record in records)
-        {
-            Console.WriteLine($"Id: {record.Id}, Date: {record.Date:dd-MM-yy}, Quantity: {record.Quantity}, Habit: {record.HabitName}, Unit: {record.MeasurementUnit}");
-        }
+        return records;
     }
 
     public List<Habit> GetHabits() // Update the GetHabits method to return a List<Habit> instead of void.
@@ -185,7 +186,7 @@ public class HelperMethods
             Program.MainMenu(); // Call MainMenu from Program.cs
             return string.Empty; // Return an empty string or handle as needed
         }
-            
+
 
         // returns input only if parsing successful. if incorrect, stays in the loop
         while (!DateTime.TryParseExact(dateInput, "dd-MM-yy", CultureInfo.InvariantCulture, DateTimeStyles.None, out _))

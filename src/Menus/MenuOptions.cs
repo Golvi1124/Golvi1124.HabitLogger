@@ -63,6 +63,8 @@ public class MenuOptions
     {
         var isRecordMenuRunning = true;
 
+
+
         while (isRecordMenuRunning)
         {
             var recordChoice = AnsiConsole.Prompt(
@@ -79,7 +81,8 @@ public class MenuOptions
             switch (recordChoice)
             {
                 case "View Records":
-                    helper.GetRecords();
+                    var records = _recordOperations.GetRecords(); // Fetch records directly using GetRecords
+                    _recordOperations.ViewRecords(records); // Pass records to ViewRecords
                     break;
                 case "Add Record":
                     _recordOperations.AddRecord();
